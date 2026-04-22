@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-MotoPatío is a marketplace for buying/selling motorcycles in Ecuador. User-facing copy is in Spanish and should stay in Spanish. Production runs at motopatio.com on a Linux VM managed with pm2 (service name `motopatio`), deployed via `deploy.sh` (`git pull && npm i && prisma migrate deploy && prisma generate && npm run build && pm2 restart`).
+MotoPatío is a marketplace for buying/selling motorcycles in Ecuador. User-facing copy is in Spanish and should stay in Spanish. Production runs at motopatio.com on a Linux VM managed with pm2 (service name `motopatio`), deployed via `deploy.sh` (`git pull && npm i && prisma db push && prisma generate && npm run build && pm2 restart`).
 
 ## Stack
 
@@ -21,11 +21,12 @@ npm run build            # Next production build
 npm run start            # Run the built app
 npm run lint             # next lint
 
-npx prisma migrate dev   # Create & apply a new migration locally
-npx prisma migrate deploy # Apply pending migrations (prod)
+npx prisma db push       # Sync DB to schema.prisma (the project's canonical flow — no migrations/ dir)
 npx prisma generate      # Regenerate client after schema edits
 npx prisma studio        # Browse DB
 ```
+
+> **DB sync flow:** This project uses `prisma db push`, not formal migrations. There is no `prisma/migrations/` directory and no `_prisma_migrations` table. `schema.prisma` is the source of truth; `db push` reconciles the DB to match it. `deploy.sh` runs `db push --accept-data-loss` on every deploy, so schema changes committed to `main` apply automatically. **TODO:** formalize migrations (baseline with `migrate diff` + `migrate resolve --applied`) once the schema stabilizes — gives rollback history and safer destructive changes.
 
 There is **no test runner configured**. Ad-hoc check/seed scripts live at the repo root (`check-*.js`, `test-*.js`, `seed-catalog.js`, `update-catalog.js`) and under `scripts/` (`seed-plans.ts`, `backup.ts`, `check-payment.ts`). Run TS scripts with `npx tsx scripts/<name>.ts`.
 
