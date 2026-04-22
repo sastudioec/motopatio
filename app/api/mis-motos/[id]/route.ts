@@ -40,6 +40,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json()
     const data: any = {}
 
+    // Guardrail: whitelist explícito. Solo estado/precio/km/descripcion/fotos
+    // son editables post-publicación. Cualquier otro campo (marca, modelo, anio,
+    // placa, tipo, cilindraje, provincia, ciudad, color, etc.) enviado en el body
+    // se ignora silenciosamente — sin error 400 — para tolerar edits hechos vía
+    // DevTools o curl sin romper la UX.
+
     // Cambio de estado (comportamiento existente)
     if (typeof body.estado === 'string') {
       if (!ESTADOS_VALIDOS.includes(body.estado)) {

@@ -585,14 +585,22 @@ function PublicarContent() {
     return null
   }
 
-  const inputStyle = (hasError:boolean):React.CSSProperties => ({
+  const inputStyle = (hasError:boolean, locked?:boolean):React.CSSProperties => ({
     width:'100%', height:'44px', padding:'0 12px',
     border: hasError ? '1px solid #dc2626' : '1px solid #e0e0e0',
-    borderRadius:'4px', fontSize:'14px', background:'#fff',
+    borderRadius:'4px', fontSize:'14px',
+    background: locked ? '#f5f5f5' : '#fff',
+    color: locked ? '#999' : '#000',
+    cursor: locked ? 'not-allowed' : 'text',
     boxSizing:'border-box', fontFamily:'inherit'
   })
   const labelStyle:React.CSSProperties = {fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}
   const errorStyle:React.CSSProperties = {fontSize:'11px',color:'#dc2626',marginTop:'4px',fontWeight:500}
+  const lockedHelper = isEditMode ? (
+    <div style={{fontSize:'11px',color:'#888',marginTop:'4px',fontStyle:'italic'}}>
+      No se puede modificar después de publicar. Contacta soporte si necesitas cambiarlo.
+    </div>
+  ) : null
 
   const blocked = emailVerified === false
   const isLoadingVerif = emailVerified === null
@@ -734,13 +742,14 @@ function PublicarContent() {
                         setForm({...form, marca, modelo: ''})
                       }
                     }}
-                    disabled={brandsLoading}
-                    style={inputStyle(!!errors.marca)}
+                    disabled={brandsLoading || isEditMode}
+                    style={inputStyle(!!errors.marca, isEditMode)}
                   >
                     <option value="">{brandsLoading ? 'Cargando marcas...' : 'Selecciona'}</option>
                     {brands.map(b=><option key={b.id} value={b.name}>{b.name}</option>)}
                   </select>
                   {errors.marca && <div style={errorStyle}>{errors.marca}</div>}
+                  {lockedHelper}
                 </div>
                 {form.marca && form.marca !== 'Otra' && (
                   <div data-error={!!errors.modelo}>
@@ -748,13 +757,14 @@ function PublicarContent() {
                     <select
                       value={form.modelo}
                       onChange={e=>setForm({...form, modelo: e.target.value})}
-                      disabled={modelsLoading || models.length === 0}
-                      style={inputStyle(!!errors.modelo)}
+                      disabled={modelsLoading || models.length === 0 || isEditMode}
+                      style={inputStyle(!!errors.modelo, isEditMode)}
                     >
                       <option value="">{modelsLoading ? 'Cargando modelos...' : 'Selecciona modelo'}</option>
                       {models.map(m=><option key={m.id} value={m.name}>{m.name}</option>)}
                     </select>
                     {errors.modelo && <div style={errorStyle}>{errors.modelo}</div>}
+                    {lockedHelper}
                   </div>
                 )}
               </div>
@@ -763,8 +773,10 @@ function PublicarContent() {
                   <label style={labelStyle}>Año *</label>
                   <input type="text" inputMode="numeric" value={form.anio}
                     onChange={e=>setForm({...form,anio:e.target.value.replace(/\D/g,'').slice(0,4)})}
-                    style={inputStyle(!!errors.anio)} placeholder={String(CURRENT_YEAR)} />
+                    disabled={isEditMode}
+                    style={inputStyle(!!errors.anio, isEditMode)} placeholder={String(CURRENT_YEAR)} />
                   {errors.anio && <div style={errorStyle}>{errors.anio}</div>}
+                  {lockedHelper}
                 </div>
                 <div data-error={!!errors.cilindraje}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'6px'}}>
@@ -774,12 +786,15 @@ function PublicarContent() {
                         type="checkbox"
                         checked={form.esElectrica}
                         onChange={e=>setForm({...form, esElectrica: e.target.checked, cilindraje: '', cilindrajeOtro: ''})}
-                        style={{margin:0, cursor:'pointer'}}
+                        disabled={isEditMode}
+                        style={{margin:0, cursor: isEditMode ? 'not-allowed' : 'pointer'}}
                       />
                       ⚡ Eléctrica
                     </label>
                   </div>
-                  <select value={form.cilindraje} onChange={e=>setForm({...form,cilindraje:e.target.value, cilindrajeOtro: e.target.value === 'Otro' ? form.cilindrajeOtro : ''})} style={inputStyle(!!errors.cilindraje)}>
+                  <select value={form.cilindraje} onChange={e=>setForm({...form,cilindraje:e.target.value, cilindrajeOtro: e.target.value === 'Otro' ? form.cilindrajeOtro : ''})}
+                    disabled={isEditMode}
+                    style={inputStyle(!!errors.cilindraje, isEditMode)}>
                     <option value="">Selecciona</option>
                     {(form.esElectrica ? potenciasElectricas : cilindradas).map(c=><option key={c}>{c}</option>)}
                   </select>
@@ -790,20 +805,25 @@ function PublicarContent() {
                       onChange={e=>setForm({...form, cilindrajeOtro: e.target.value.slice(0,20)})}
                       placeholder={form.esElectrica ? 'Ej: 7 kW' : 'Ej: 180cc'}
                       maxLength={20}
-                      style={{...inputStyle(!!errors.cilindraje), marginTop:'6px'}}
+                      disabled={isEditMode}
+                      style={{...inputStyle(!!errors.cilindraje, isEditMode), marginTop:'6px'}}
                     />
                   )}
                   {errors.cilindraje && <div style={errorStyle}>{errors.cilindraje}</div>}
+                  {lockedHelper}
                 </div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
                 <div data-error={!!errors.tipo}>
                   <label style={labelStyle}>Tipo *</label>
-                  <select value={form.tipo} onChange={e=>setForm({...form,tipo:e.target.value})} style={inputStyle(!!errors.tipo)}>
+                  <select value={form.tipo} onChange={e=>setForm({...form,tipo:e.target.value})}
+                    disabled={isEditMode}
+                    style={inputStyle(!!errors.tipo, isEditMode)}>
                     <option value="">Selecciona</option>
                     {tipos.map(t=><option key={t}>{t}</option>)}
                   </select>
                   {errors.tipo && <div style={errorStyle}>{errors.tipo}</div>}
+                  {lockedHelper}
                 </div>
                 <div data-error={!!errors.km}>
                   <label style={labelStyle}>Kilometraje *</label>
@@ -826,12 +846,14 @@ function PublicarContent() {
                   <select
                     value={form.provincia}
                     onChange={e=>setForm({...form, provincia: e.target.value, ciudad: ''})}
-                    style={inputStyle(!!errors.provincia)}
+                    disabled={isEditMode}
+                    style={inputStyle(!!errors.provincia, isEditMode)}
                   >
                     <option value="">Selecciona</option>
                     {getProvincias().map(p=><option key={p} value={p}>{p}</option>)}
                   </select>
                   {errors.provincia && <div style={errorStyle}>{errors.provincia}</div>}
+                  {lockedHelper}
                 </div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
@@ -840,13 +862,14 @@ function PublicarContent() {
                   <select
                     value={form.ciudad}
                     onChange={e=>setForm({...form, ciudad: e.target.value})}
-                    disabled={!form.provincia}
-                    style={inputStyle(!!errors.ciudad)}
+                    disabled={!form.provincia || isEditMode}
+                    style={inputStyle(!!errors.ciudad, isEditMode)}
                   >
                     <option value="">{form.provincia ? 'Selecciona ciudad' : 'Selecciona provincia primero'}</option>
                     {form.provincia && getCiudadesByProvincia(form.provincia).map(c=><option key={c} value={c}>{c}</option>)}
                   </select>
                   {errors.ciudad && <div style={errorStyle}>{errors.ciudad}</div>}
+                  {lockedHelper}
                 </div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
@@ -855,19 +878,23 @@ function PublicarContent() {
                   <select
                     value={form.color}
                     onChange={e=>setForm({...form, color: e.target.value})}
-                    style={inputStyle(!!errors.color)}
+                    disabled={isEditMode}
+                    style={inputStyle(!!errors.color, isEditMode)}
                   >
                     <option value="">Selecciona</option>
                     {colores.map(col=><option key={col} value={col}>{col}</option>)}
                   </select>
                   {errors.color && <div style={errorStyle}>{errors.color}</div>}
+                  {lockedHelper}
                 </div>
                 <div data-error={!!errors.placa}>
                   <label style={labelStyle}>Placa * <span style={{fontWeight:400,color:'#888'}}>(Ecuador)</span></label>
                   <input value={form.placa} onChange={e=>setForm({...form,placa:formatPlaca(e.target.value)})}
-                    style={{...inputStyle(!!errors.placa), textTransform:'uppercase', letterSpacing:'1px'}}
+                    disabled={isEditMode}
+                    style={{...inputStyle(!!errors.placa, isEditMode), textTransform:'uppercase', letterSpacing:'1px'}}
                     placeholder="ABC-1234" maxLength={8} />
                   {errors.placa && <div style={errorStyle}>{errors.placa}</div>}
+                  {lockedHelper}
                 </div>
               </div>
               <div data-error={!!errors.descripcion}>
