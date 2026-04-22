@@ -17,6 +17,9 @@ export default function LoginPage() {
     if (params.get('verified') === '1') {
       setSuccess('\u00a1Correo verificado! Ya puedes ingresar con tu cuenta.')
     }
+    if (params.get('reset') === '1') {
+      setSuccess('Contraseña actualizada. Ya puedes ingresar con tu nueva contraseña.')
+    }
     if (params.get('error') === 'token_invalido') {
       setError('Token inv\u00e1lido. Solicita un nuevo correo de verificaci\u00f3n.')
     }
@@ -95,6 +98,11 @@ export default function LoginPage() {
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required
               style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px',outline:'none'}}
               placeholder="••••••••" />
+            <div style={{textAlign:'right',marginTop:'6px'}}>
+              <Link href="/auth/forgot-password" style={{fontSize:'12px',color:'#E8390E',textDecoration:'none',fontWeight:600}}>
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
           </div>
           {success && <div style={{background:'#e8f5e9',color:'#2e7d32',padding:'12px',borderRadius:'4px',fontSize:'14px',marginBottom:'16px',textAlign:'center',fontWeight:'600'}}>{success}</div>}
           {error && <div style={{background:'#FCEBEB',color:'#A32D2D',padding:'10px',borderRadius:'4px',fontSize:'13px',marginBottom:'16px'}}>{error}</div>}

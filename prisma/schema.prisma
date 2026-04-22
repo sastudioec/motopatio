@@ -26,6 +26,8 @@ model User {
   role                  String    @default("user")
   emailVerifyToken      String?
   emailVerifyExpires    DateTime?
+  passwordResetToken    String?   @unique
+  passwordResetExpires  DateTime?
   blocked               Boolean   @default(false)
   lastFreePublicationAt DateTime?
   createdAt             DateTime  @default(now())

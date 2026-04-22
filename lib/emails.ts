@@ -39,6 +39,13 @@ export async function sendVerificationEmail(to: string, name: string, token: str
   return resend.emails.send({ from: 'MotoPatio <noreply@motopatio.com>', to, subject: 'Confirma tu correo en MotoPatio', html: wrap(body) })
 }
 
+export async function sendPasswordResetEmail(to: string, name: string, token: string) {
+  const n = (name || '').split(' ')[0] || 'hola'
+  const link = BASE + '/auth/reset-password?token=' + token
+  const body = '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">Restablece tu contraseña</h2><p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, recibimos una solicitud para restablecer tu contraseña. Haz clic en el botón para elegir una nueva. El enlace expira en <strong>1 hora</strong>.</p>' + btn(link, 'Restablecer contraseña') + '<p style="margin:24px 0 0;font-size:12px;color:#a1a1aa;text-align:center;">Si no solicitaste este cambio, ignora este mensaje y tu contraseña seguirá igual.</p>'
+  return resend.emails.send({ from: 'MotoPatio <noreply@motopatio.com>', to, subject: 'Restablece tu contraseña en MotoPatio', html: wrap(body) })
+}
+
 export async function sendMotoPublicadaEmail(to: string, name: string, moto: { titulo: string; id: string; precio: number }) {
   const n = name.split(' ')[0]
   const precio = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(moto.precio)
