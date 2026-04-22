@@ -3,6 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 type Tab = 'dashboard' | 'motos' | 'usuarios' | 'publicidad'
 
@@ -147,7 +148,16 @@ export default function AdminPage() {
                 return (
                   <div key={moto.id} style={{background:'#fff',borderRadius:'8px',border:'1px solid #e8e8e8',display:'flex',overflow:'hidden'}}>
                     <div style={{width:'80px',height:'80px',flexShrink:0,background:'#e8e8e8'}}>
-                      {fotos[0] ? <img src={fotos[0]} style={{width:'80px',height:'80px',objectFit:'cover'}} /> : <div style={{width:'80px',height:'80px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px'}}>🏍️</div>}
+                      {fotos[0] ? (
+                        <Image
+                          src={fotos[0]}
+                          alt={`${moto.marca} ${moto.modelo} ${moto.anio} - ${moto.ciudad}`}
+                          width={80}
+                          height={80}
+                          sizes="80px"
+                          style={{width:'80px',height:'80px',objectFit:'cover'}}
+                        />
+                      ) : <div style={{width:'80px',height:'80px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px'}}>🏍️</div>}
                     </div>
                     <div style={{padding:'12px 16px',flex:1,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                       <div>
@@ -158,7 +168,7 @@ export default function AdminPage() {
                         </span>
                       </div>
                       <div style={{display:'flex',gap:'8px'}}>
-                        <Link href={'/motos/' + moto.id} target="_blank" style={{background:'#f4f4f4',color:'#333',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,textDecoration:'none'}}>Ver</Link>
+                        <Link href={'/motos/' + (moto.slug || moto.id)} target="_blank" style={{background:'#f4f4f4',color:'#333',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,textDecoration:'none'}}>Ver</Link>
                         {moto.estado === 'activo' ? (
                           <button onClick={() => handleMotoEstado(moto.id, 'suspendido')} style={{background:'#FFF8E1',color:'#B45309',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>Suspender</button>
                         ) : (
@@ -270,7 +280,16 @@ function BannerList({ banners, onEdit, onDelete, onToggleActive }: any) {
         return (
           <div key={b.id} style={{background:'#fff',borderRadius:'8px',border:'1px solid #e8e8e8',display:'flex',overflow:'hidden'}}>
             <div style={{width:'120px',height:'80px',flexShrink:0,background:'#e8e8e8',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              {b.imageUrl ? <img src={b.imageUrl} style={{width:'120px',height:'80px',objectFit:'cover'}} /> : '🖼️'}
+              {b.imageUrl ? (
+                <Image
+                  src={b.imageUrl}
+                  alt={b.title || 'Banner publicitario'}
+                  width={120}
+                  height={80}
+                  sizes="120px"
+                  style={{width:'120px',height:'80px',objectFit:'cover'}}
+                />
+              ) : '🖼️'}
             </div>
             <div style={{padding:'12px 16px',flex:1,display:'flex',justifyContent:'space-between',alignItems:'center',gap:'12px'}}>
               <div style={{flex:1}}>
@@ -383,7 +402,14 @@ function BannerForm({ initial, onCancel, onSaved }: any) {
           <label style={labelStyle}>Imagen *</label>
           {imageUrl && (
             <div style={{marginBottom:'8px'}}>
-              <img src={imageUrl} style={{maxWidth:'100%',maxHeight:'180px',borderRadius:'4px',border:'1px solid #e0e0e0'}} />
+              <Image
+                src={imageUrl}
+                alt="Vista previa del banner"
+                width={1200}
+                height={300}
+                sizes="(max-width: 900px) 100vw, 900px"
+                style={{maxWidth:'100%',height:'auto',maxHeight:'180px',width:'auto',borderRadius:'4px',border:'1px solid #e0e0e0'}}
+              />
             </div>
           )}
           <input type="file" accept="image/*" onChange={handleFileUpload} disabled={uploading} style={{fontSize:'13px'}} />

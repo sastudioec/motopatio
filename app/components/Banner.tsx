@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { pickBanner, BannerPosition } from '@/lib/banners'
 
 interface Props {
@@ -27,6 +28,7 @@ export default async function Banner({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
     ...style,
   }
 
@@ -45,17 +47,19 @@ export default async function Banner({
     : undefined
 
   const img = (
-    <img
+    <Image
       src={banner.imageUrl}
       alt={banner.title}
-      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      fill
+      sizes="(max-width: 900px) 100vw, 1200px"
+      style={{ objectFit: 'cover' }}
     />
   )
 
   return (
     <div style={containerStyle}>
       {href ? (
-        <a href={href} target="_blank" rel="noopener sponsored" style={{ display: 'block', width: '100%', height: '100%' }}>
+        <a href={href} target="_blank" rel="noopener sponsored" style={{ display: 'block', width: '100%', height: '100%', position: 'relative' }}>
           {img}
         </a>
       ) : img}

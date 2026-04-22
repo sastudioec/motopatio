@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function MisMotosPage() {
   const { data: session, status } = useSession()
@@ -103,7 +104,16 @@ export default function MisMotosPage() {
                 <div key={moto.id} style={{background: esBorrador ? '#fafafa' : '#fff',borderRadius:'8px',border: esBorrador ? '1px dashed #c7c7c7' : '1px solid #e8e8e8',overflow:'hidden', opacity: disabled ? 0.6 : 1}}>
                   <div style={{display:'flex'}}>
                     <div style={{width:'120px',height:'120px',flexShrink:0,background:'#e8e8e8',overflow:'hidden',opacity: activo ? 1 : esBorrador ? 0.45 : 0.5}}>
-                      {fotos[0] ? <img src={fotos[0]} style={{width:'120px',height:'120px',objectFit:'cover',display:'block'}} /> : <div style={{width:'120px',height:'120px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'32px'}}>🏍️</div>}
+                      {fotos[0] ? (
+                        <Image
+                          src={fotos[0]}
+                          alt={`${moto.marca} ${moto.modelo} ${moto.anio} - ${moto.ciudad}`}
+                          width={120}
+                          height={120}
+                          sizes="120px"
+                          style={{width:'120px',height:'120px',objectFit:'cover',display:'block'}}
+                        />
+                      ) : <div style={{width:'120px',height:'120px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'32px'}}>🏍️</div>}
                     </div>
                     <div style={{padding:'14px 16px',flex:1}}>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'8px'}}>
@@ -143,7 +153,7 @@ export default function MisMotosPage() {
                               style={{background:'#1E2340',color:'#fff',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,textDecoration:'none'}}>
                               ✎ Editar
                             </Link>
-                            <Link href={'/motos/' + moto.id}
+                            <Link href={'/motos/' + (moto.slug || moto.id)}
                               style={{background:'#f4f4f4',color:'#333',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,textDecoration:'none'}}>
                               Ver
                             </Link>

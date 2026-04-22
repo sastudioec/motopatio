@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Footer() {
   return (
@@ -6,7 +7,7 @@ export default function Footer() {
       <div style={{padding:'40px 20px',display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:'32px',borderBottom:'1px solid #1f2937'}}>
 
         <div style={{maxWidth:'240px'}}>
-          <Link href="/" style={{display:"inline-block"}}><img src="/logo-blanco-moto-patio.png" alt="MotoPatío" style={{height:"40px",display:"block"}} /></Link>
+          <Link href="/" style={{display:"inline-block"}}><Image src="/logo-blanco-moto-patio.png" alt="MotoPatío" width={160} height={40} style={{height:"40px",width:'auto',display:"block"}} /></Link>
           <p style={{fontSize:'12px',color:'#6b7280',marginTop:'8px'}}>El patio de motos digital del Ecuador.</p>
           <a href="mailto:info@motopatio.com" style={{fontSize:'12px',color:'#9ca3af',textDecoration:'none',marginTop:'10px',display:'inline-block'}}>info@motopatio.com</a>
 

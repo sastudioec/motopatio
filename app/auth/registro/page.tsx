@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -45,7 +46,7 @@ export default function RegistroPage() {
       <div style={{background:'#fff',borderRadius:'8px',padding:'40px',width:'100%',maxWidth:'420px',border:'1px solid #e8e8e8'}}>
         <div style={{textAlign:'center',marginBottom:'32px'}}>
           <Link href="/">
-            <img src="/motopatio-logo.png" alt="MotoPatío" style={{height:'40px',marginBottom:'8px'}} />
+            <Image src="/motopatio-logo.png" alt="MotoPatío" width={180} height={40} style={{height:'40px',width:'auto',marginBottom:'8px'}} />
           </Link>
           <p style={{fontSize:'14px',color:'#666',marginTop:'8px'}}>Crea tu cuenta gratis</p>
         </div>

@@ -366,7 +366,7 @@ export default function ProfilePage() {
                         {p.listings && p.listings.length > 0 && (
                           <div style={{marginTop:'8px',fontSize:'12px',color:'#555'}}>
                             {p.listings.map((l: any) => (
-                              <Link key={l.id} href={`/motos/${l.id}`} style={{color:'#1E2340',textDecoration:'none',fontWeight:600}}>
+                              <Link key={l.id} href={`/motos/${l.slug || l.id}`} style={{color:'#1E2340',textDecoration:'none',fontWeight:600}}>
                                 {l.marca} {l.modelo} {l.anio}
                               </Link>
                             ))}

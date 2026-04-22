@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
 
@@ -58,7 +59,7 @@ export default function Navbar() {
       <nav style={{background:'#fff',padding: isMobile ? '0 12px' : '0 20px',display:'flex',alignItems:'center',justifyContent:'space-between',height: isMobile ? '60px' : '70px',borderBottom:'3px solid #E8390E',position:'sticky',top:0,zIndex:100}}>
 
         <Link href="/" style={{display:'flex',alignItems:'center',flexShrink:0}}>
-          <img src="/motopatio-logo.png" alt="MotoPatío" style={{height: isMobile ? '32px' : '38px'}} />
+          <Image src="/motopatio-logo.png" alt="MotoPatío" width={160} height={38} priority style={{height: isMobile ? '32px' : '38px',width:'auto'}} />
         </Link>
 
         {!isMobile && (

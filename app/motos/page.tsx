@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { puedeCircularElDia } from '@/lib/picoyplaca'
 import { PROVINCIAS_ECUADOR } from '@/lib/provincias-ecuador'
 
@@ -259,10 +260,19 @@ export default function MotosPage() {
                   const fotos = (() => { try { return JSON.parse(l.fotos || '[]') } catch { return [] } })()
                   const ubicacion = l.provincia ? `${l.ciudad}, ${l.provincia}` : l.ciudad
                   return (
-                    <Link key={l.id} href={'/motos/' + l.id} style={{textDecoration:'none'}}>
+                    <Link key={l.id} href={'/motos/' + (l.slug || l.id)} style={{textDecoration:'none'}}>
                       <div style={{background:'#fff',borderRadius:'6px',overflow:'hidden',border: l.destacado ? '1.5px solid #E8390E' : '1.5px solid #e8e8e8'}}>
                         <div style={{height:'140px',background:'#e8e8e8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'40px',position:'relative'}}>
-                          {fotos[0] ? <img src={fotos[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '🏍️'}
+                          {fotos[0] ? (
+                            <Image
+                              src={fotos[0]}
+                              alt={`${l.marca} ${l.modelo} ${l.anio} - ${l.ciudad}`}
+                              width={400}
+                              height={300}
+                              sizes="(max-width: 600px) 50vw, 240px"
+                              style={{width:'100%',height:'100%',objectFit:'cover'}}
+                            />
+                          ) : '🏍️'}
                           {l.destacado && <div style={{position:'absolute',top:0,right:0,background:'#E8390E',color:'white',fontSize:'9px',fontWeight:800,padding:'4px 10px'}}>DESTACADA</div>}
                           {l.esElectrica && <div style={{position:'absolute',top:0,left:0,background:'#10B981',color:'white',fontSize:'9px',fontWeight:800,padding:'4px 8px'}}>⚡ ELÉCTRICA</div>}
                         </div>

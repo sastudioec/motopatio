@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import Hero from './components/Hero'
 import Banner from './components/Banner'
 import { prisma } from '@/lib/prisma'
@@ -85,12 +86,21 @@ export default async function Home() {
 
 function MotoCard({ l }: { l: any }) {
   const fotos = (() => { try { return JSON.parse(l.fotos || '[]') } catch { return [] } })()
-  const href = '/motos/' + l.id
+  const href = '/motos/' + (l.slug || l.id)
   return (
     <Link href={href} style={{textDecoration:'none'}}>
       <div style={{background:'#fff',borderRadius:'4px',overflow:'hidden',border:l.destacado?'1.5px solid #E8390E':'1.5px solid #e8e8e8'}}>
         <div style={{height:'140px',background:'#e8e8e8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'36px',position:'relative'}}>
-          {fotos[0] ? <img src={fotos[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '🏍️'}
+          {fotos[0] ? (
+            <Image
+              src={fotos[0]}
+              alt={`${l.marca} ${l.modelo} ${l.anio} - ${l.ciudad}`}
+              width={400}
+              height={300}
+              sizes="(max-width: 600px) 50vw, 240px"
+              style={{width:'100%',height:'100%',objectFit:'cover'}}
+            />
+          ) : '🏍️'}
           {l.destacado && <div style={{position:'absolute',top:0,right:0,background:'#E8390E',color:'white',fontSize:'9px',fontWeight:800,padding:'4px 10px'}}>DESTACADA</div>}
         </div>
         <div style={{padding:'9px 11px'}}>
