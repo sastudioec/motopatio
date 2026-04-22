@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  name                  String?
+  lastName              String?
+  gender                String?
+  birthDate             DateTime?
+  email                 String    @unique
+  emailVerified         DateTime?
+  password              String?
+  phone                 String?
+  city                  String?
+  bio                   String?
+  avatar                String?
+  image                 String?
+  cedulaVerified        Boolean   @default(false)
+  phoneVerified         Boolean   @default(false)
+  role                  String    @default("user")
+  emailVerifyToken      String?
+  emailVerifyExpires    DateTime?
+  blocked               Boolean   @default(false)
+  lastFreePublicationAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  listings              Listing[]
+  payments              Payment[]
+  accounts              Account[]
+  sessions              Session[]
+}
+
+model Listing {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  marca          String
+  modelo         String
+  anio           Int
+  cilindraje     String
+  tipo           String
+  km             Int
+  color          String?
+  provincia      String?
+  ciudad         String
+  precio         Float
+  negociable     Boolean   @default(false)
+  descripcion    String?   @db.Text
+  placa          String?
+  estado         String    @default("activo")
+  planTipo       String    @default("gratis")
+  destacado      Boolean   @default(false)
+  destacadoHasta DateTime?
+  publishedAt    DateTime?
+  expiraEn       DateTime?
+  fotos          String?   @db.Text
+  esElectrica    Boolean   @default(false)
+  video          String?
+  extras         String?   @db.Text
+  matricula      String?
+  soat           String?
+  views          Int       @default(0)
+  planId         String?
+  plan           Plan?     @relation(fields: [planId], references: [id])
+  payments       Payment[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Plan {
+  id           String    @id
+  name         String
+  priceCents   Int       @default(0)
+  durationDays Int
+  maxPhotos    Int
+  featuredDays Int       @default(0)
+  cooldownDays Int       @default(0)
+  isActive     Boolean   @default(true)
+  sortOrder    Int       @default(0)
+  description  String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  listings     Listing[]
+  payments     Payment[]
+}
+
+model Payment {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id])
+  listingId             String?
+  listing               Listing?  @relation(fields: [listingId], references: [id])
+  planId                String?
+  plan                  Plan?     @relation(fields: [planId], references: [id])
+  concept               String
+  amountCents           Int
+  currency              String    @default("USD")
+  status                String    @default("pending")
+  clientTransactionId   String    @unique
+  payphoneTransactionId String?
+  payphoneRawResponse   String?   @db.Text
+  errorMessage          String?   @db.Text
+  createdAt             DateTime  @default(now())
+  confirmedAt           DateTime?
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Banner {
+  id         String   @id @default(cuid())
+  title      String
+  advertiser String?
+  imageUrl   String
+  linkUrl    String?
+  position   String
+  startDate  DateTime
+  endDate    DateTime
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  impressions BannerImpression[]
+  clicks      BannerClick[]
+
+  @@index([position, active, startDate, endDate])
+}
+
+model BannerImpression {
+  id        String   @id @default(cuid())
+  bannerId  String
+  banner    Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([bannerId, createdAt])
+}
+
+model BannerClick {
+  id        String   @id @default(cuid())
+  bannerId  String
+  banner    Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([bannerId, createdAt])
+}
+
+model MotoBrand {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  slug      String      @unique
+  sortOrder Int         @default(100)
+  active    Boolean     @default(true)
+  models    MotoModel[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([active, sortOrder, name])
+}
+
+model MotoModel {
+  id        String    @id @default(cuid())
+  brandId   String
+  brand     MotoBrand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([brandId, name])
+  @@index([brandId, active, name])
+}
