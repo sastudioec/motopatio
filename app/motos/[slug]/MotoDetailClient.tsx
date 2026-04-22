@@ -2,31 +2,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { calcularPicoYPlaca } from '@/lib/picoyplaca'
 
-export default function MotoDetailClient({ params }: { params: Promise<{ id: string }> }) {
+export default function MotoDetailClient({ moto }: { moto: any }) {
   const { data: session } = useSession()
-  const [moto, setMoto] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
   const [fotoActual, setFotoActual] = useState(0)
-  const [id, setId] = useState<string>('')
   const [shareOpen, setShareOpen] = useState(false)
   const [toast, setToast] = useState('')
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const shareRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => { params.then(p => setId(p.id)) }, [])
-
-  useEffect(() => {
-    if (!id) return
-    fetch('/api/listings/' + id)
-      .then(r => r.json())
-      .then(data => {
-        setMoto(data.listing)
-        setLoading(false)
-      })
-  }, [id])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -60,17 +46,6 @@ export default function MotoDetailClient({ params }: { params: Promise<{ id: str
     const t = setTimeout(() => setToast(''), 2500)
     return () => clearTimeout(t)
   }, [toast])
-
-  if (loading) return (
-    <div style={{minHeight:'100vh',background:'#f4f4f4'}}>
-      <div style={{padding:'40px',textAlign:'center',fontSize:'14px',color:'#888'}}>Cargando...</div>
-    </div>
-  )
-  if (!moto) return (
-    <div style={{minHeight:'100vh',background:'#f4f4f4'}}>
-      <div style={{padding:'40px',textAlign:'center'}}>Moto no encontrada</div>
-    </div>
-  )
 
   const fotos = (() => { try { return JSON.parse(moto.fotos || '[]') } catch { return [] } })()
   const pyp = calcularPicoYPlaca(moto.placa || '', moto.ciudad || '')
@@ -142,7 +117,15 @@ export default function MotoDetailClient({ params }: { params: Promise<{ id: str
               style={{background:'#e8e8e8',borderRadius:'8px',overflow:'hidden',marginBottom:'8px',height:'320px',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',cursor: fotos[fotoActual] ? 'zoom-in' : 'default'}}>
               {fotos[fotoActual] ? (
                 <>
-                  <img src={fotos[fotoActual]} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                  <Image
+                    src={fotos[fotoActual]}
+                    alt={`${moto.marca} ${moto.modelo} ${moto.anio} - ${moto.ciudad} (foto ${fotoActual + 1})`}
+                    width={1200}
+                    height={800}
+                    priority
+                    sizes="(max-width: 900px) 100vw, 500px"
+                    style={{width:'100%',height:'100%',objectFit:'cover'}}
+                  />
                   <div style={{position:'absolute',top:'10px',right:'10px',background:'rgba(0,0,0,0.55)',color:'#fff',padding:'6px 10px',borderRadius:'20px',fontSize:'11px',fontWeight:600,display:'flex',alignItems:'center',gap:'4px',pointerEvents:'none'}}>
                     🔍 Ver completa
                   </div>
@@ -159,7 +142,11 @@ export default function MotoDetailClient({ params }: { params: Promise<{ id: str
             {fotos.length > 1 && (
               <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
                 {fotos.map((f: string, i: number) => (
-                  <img key={i} src={f} onClick={() => setFotoActual(i)}
+                  <Image key={i} src={f} onClick={() => setFotoActual(i)}
+                    alt={`${moto.marca} ${moto.modelo} ${moto.anio} - miniatura ${i + 1}`}
+                    width={64}
+                    height={64}
+                    sizes="64px"
                     style={{width:'64px',height:'64px',objectFit:'cover',borderRadius:'4px',cursor:'pointer',border: i === fotoActual ? '2px solid #E8390E' : '2px solid transparent'}} />
                 ))}
               </div>
@@ -307,8 +294,12 @@ export default function MotoDetailClient({ params }: { params: Promise<{ id: str
               setTouchStartX(null)
             }}
             style={{width:'calc(100vw - 120px)',maxWidth:'1200px',height:'calc(100vh - 200px)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <img src={fotos[fotoActual]}
-              style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',userSelect:'none'}}
+            <Image src={fotos[fotoActual]}
+              alt={`${moto.marca} ${moto.modelo} ${moto.anio} - ${moto.ciudad} (foto ${fotoActual + 1})`}
+              width={1600}
+              height={1200}
+              sizes="100vw"
+              style={{maxWidth:'100%',maxHeight:'100%',width:'auto',height:'auto',objectFit:'contain',userSelect:'none'}}
               draggable={false} />
           </div>
 
@@ -326,7 +317,11 @@ export default function MotoDetailClient({ params }: { params: Promise<{ id: str
             <div onClick={(e) => e.stopPropagation()}
               style={{position:'absolute',bottom:'20px',left:'50%',transform:'translateX(-50%)',display:'flex',gap:'8px',padding:'10px',background:'rgba(0,0,0,0.4)',borderRadius:'10px',maxWidth:'calc(100vw - 40px)',overflowX:'auto'}}>
               {fotos.map((f: string, i: number) => (
-                <img key={i} src={f} onClick={() => setFotoActual(i)}
+                <Image key={i} src={f} onClick={() => setFotoActual(i)}
+                  alt={`${moto.marca} ${moto.modelo} ${moto.anio} - miniatura ${i + 1}`}
+                  width={54}
+                  height={54}
+                  sizes="54px"
                   style={{width:'54px',height:'54px',objectFit:'cover',borderRadius:'4px',cursor:'pointer',flexShrink:0,border: i === fotoActual ? '2px solid #E8390E' : '2px solid transparent',opacity: i === fotoActual ? 1 : 0.65}} />
               ))}
             </div>

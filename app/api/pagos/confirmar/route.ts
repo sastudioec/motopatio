@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { confirmTransaction } from '@/lib/payphone'
 import { getPlanById, calcExpiresAt, calcFeaturedUntil } from '@/lib/plans'
 import { sendMotoPublicadaEmail } from '@/lib/emails'
+import { buildListingSlug } from '@/lib/slug'
 
 /**
  * Retorna la URL base publica del sitio. Evita usar req.url
@@ -130,6 +131,9 @@ export async function GET(req: NextRequest) {
       destacadoHasta,
     },
   })
+
+  const slug = buildListingSlug(listing)
+  await prisma.listing.update({ where: { id: listing.id }, data: { slug } })
 
   await prisma.payment.update({
     where: { id: payment.id },

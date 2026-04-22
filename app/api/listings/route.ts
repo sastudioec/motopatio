@@ -9,6 +9,7 @@ import {
   calcExpiresAt,
   calcFeaturedUntil,
 } from '@/lib/plans'
+import { buildListingSlug } from '@/lib/slug'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
   const expiraEn = calcExpiresAt(now, plan.durationDays)
   const destacadoHasta = calcFeaturedUntil(now, plan.featuredDays)
 
-  // Crear la publicacion
+  // Crear la publicacion (slug se setea justo despues con el id recien creado)
   const listing = await prisma.listing.create({
     data: {
       user: { connect: { id: user.id } },
@@ -104,6 +105,10 @@ export async function POST(req: NextRequest) {
       destacadoHasta,
     },
   })
+
+  const slug = buildListingSlug(listing)
+  await prisma.listing.update({ where: { id: listing.id }, data: { slug } })
+  ;(listing as any).slug = slug
 
   // Si fue plan gratis, actualizar la marca de tiempo para el cooldown
   if (plan.id === 'gratis') {
