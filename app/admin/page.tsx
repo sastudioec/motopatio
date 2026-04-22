@@ -264,7 +264,14 @@ function BannerList({ banners, onEdit, onDelete, onToggleActive }: any) {
     return <div style={{background:'#fff',borderRadius:'8px',padding:'40px',textAlign:'center',color:'#888'}}>No hay banners aún. Crea el primero.</div>
   }
 
-  const positionLabels: any = { hero: 'Hero', mid_left: 'Mid izquierdo', mid_right: 'Mid derecho' }
+  const positionLabels: any = {
+    hero: 'Home · Hero',
+    mid_left: 'Home · Mid izquierdo',
+    mid_right: 'Home · Mid derecho',
+    motos_hero: 'Motos · Hero',
+    motos_mid_left: 'Motos · Mid izquierdo',
+    motos_mid_right: 'Motos · Mid derecho',
+  }
   const now = new Date()
 
   return (
@@ -392,9 +399,16 @@ function BannerForm({ initial, onCancel, onSaved }: any) {
         <div>
           <label style={labelStyle}>Posición *</label>
           <select value={position} onChange={e => setPosition(e.target.value)} style={inputStyle}>
-            <option value="hero">Hero (arriba, 4:1)</option>
-            <option value="mid_left">Mid izquierdo (4:1)</option>
-            <option value="mid_right">Mid derecho (4:1)</option>
+            <optgroup label="Home">
+              <option value="hero">Hero (arriba, 4:1)</option>
+              <option value="mid_left">Mid izquierdo (4:1)</option>
+              <option value="mid_right">Mid derecho (4:1)</option>
+            </optgroup>
+            <optgroup label="Motos (/motos)">
+              <option value="motos_hero">Hero (arriba, 4:1)</option>
+              <option value="motos_mid_left">Mid izquierdo (4:1)</option>
+              <option value="motos_mid_right">Mid derecho (4:1)</option>
+            </optgroup>
           </select>
         </div>
 
