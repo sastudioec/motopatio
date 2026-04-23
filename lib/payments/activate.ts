@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { getPlanById, calcExpiresAt, calcFeaturedUntil } from '@/lib/plans'
-import { sendMotoPublicadaEmail } from '@/lib/emails'
+import { sendMotoPublicadaEmail, sendDestacadoActivadoEmail } from '@/lib/emails'
 import { buildListingSlug } from '@/lib/slug'
 import { generateListingPublicId } from '@/lib/public-id'
 
@@ -61,6 +61,12 @@ export async function activatePayment(paymentId: string): Promise<ActivateResult
   if (!payment) return { status: 'missing_data', listingId: null, reason: 'nolisting' }
   if (payment.status !== 'approved') {
     return { status: 'skipped_not_approved', listingId: null }
+  }
+
+  // Idempotencia: marker comun a plan y featured. Si ya fue activado
+  // (por user-facing o por reconciliador), skip.
+  if (payment.activatedAt) {
+    return { status: 'already_active', listingId: payment.listingId }
   }
 
   if (payment.concept === 'plan') {
@@ -149,6 +155,11 @@ async function activatePlanPayment(
     return { status: 'already_active', listingId: listing.id }
   }
 
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { activatedAt: new Date() },
+  })
+
   try {
     await sendMotoPublicadaEmail(
       payment.user.email,
@@ -168,7 +179,9 @@ async function activatePlanPayment(
 }
 
 async function activateFeaturedPayment(
-  payment: Awaited<ReturnType<typeof prisma.payment.findUnique>>
+  payment: Awaited<ReturnType<typeof prisma.payment.findUnique>> & {
+    user: { email: string; name: string | null }
+  }
 ): Promise<ActivateResult> {
   if (!payment) return { status: 'missing_data', listingId: null, reason: 'nolisting' }
   if (!payment.listingId) {
@@ -182,13 +195,10 @@ async function activateFeaturedPayment(
   }
 
   const now = new Date()
-  const nuevaHasta = new Date(now)
-  nuevaHasta.setDate(nuevaHasta.getDate() + days)
-
-  await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const listing = await tx.listing.findUnique({
       where: { id: payment.listingId! },
-      select: { destacadoHasta: true },
+      select: { destacadoHasta: true, marca: true, modelo: true, anio: true, slug: true, id: true, publicId: true },
     })
     if (!listing) throw new Error('Listing no encontrado: ' + payment.listingId)
     const base =
@@ -201,7 +211,22 @@ async function activateFeaturedPayment(
       where: { id: payment.listingId! },
       data: { destacado: true, destacadoHasta: extendido },
     })
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: { activatedAt: now },
+    })
+    return { listing, destacadoHasta: extendido }
   })
+
+  try {
+    await sendDestacadoActivadoEmail(payment.user.email, payment.user.name || 'Usuario', {
+      titulo: `${result.listing.marca} ${result.listing.modelo} ${result.listing.anio}`,
+      slug: result.listing.slug || result.listing.id,
+      destacadoHasta: result.destacadoHasta,
+    })
+  } catch (e) {
+    console.error('[activatePayment] email featured error:', e)
+  }
 
   return { status: 'activated', listingId: payment.listingId }
 }

@@ -72,6 +72,32 @@ export async function sendPagoNoCompletadoEmail(
   })
 }
 
+export async function sendDestacadoActivadoEmail(
+  to: string,
+  name: string,
+  info: { titulo: string; slug: string; destacadoHasta: Date }
+) {
+  const n = (name || '').split(' ')[0] || 'hola'
+  const fecha = new Intl.DateTimeFormat('es-EC', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  }).format(info.destacadoHasta)
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">⭐ Tu moto está destacada</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, tu anuncio aparece primero en el catálogo y en la sección "Clasificado Destacado" del home.</p>' +
+    '<div style="background:#fff4e6;border-radius:8px;padding:16px 20px;margin:16px 0;border-left:4px solid #e8572a;">' +
+    '<p style="margin:0 0 4px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Destacado hasta</p>' +
+    '<p style="margin:0;font-size:17px;font-weight:700;color:#1a1f36;">' + info.titulo + '</p>' +
+    '<p style="margin:6px 0 0;font-size:15px;font-weight:700;color:#e8572a;">' + fecha + '</p>' +
+    '</div>' +
+    btn(BASE + '/motos/' + info.slug, 'Ver mi anuncio')
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: 'Tu moto está destacada en MotoPatio ⭐',
+    html: wrap(body),
+  })
+}
+
 export async function sendMotoPublicadaEmail(to: string, name: string, moto: { titulo: string; slug: string; publicId: string; precio: number }) {
   const n = name.split(' ')[0]
   const precio = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(moto.precio)
