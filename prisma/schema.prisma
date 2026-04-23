@@ -115,6 +115,7 @@ model Payment {
   errorMessage          String?   @db.Text
   createdAt             DateTime  @default(now())
   confirmedAt           DateTime?
+  activatedAt           DateTime?
   updatedAt             DateTime  @updatedAt
 
   @@index([userId, status])

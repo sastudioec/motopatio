@@ -39,6 +39,18 @@ const PLANES = [
     sortOrder: 3,
     description: 'Publicacion por 30 dias con 15 fotos y destacado por 7 dias.',
   },
+  {
+    id: 'featured',
+    name: 'Destacado',
+    priceCents: 700,
+    durationDays: 0,
+    maxPhotos: 0,
+    featuredDays: 7,
+    cooldownDays: 0,
+    isActive: true,
+    sortOrder: 10,
+    description: 'Add-on: 7 dias de destacado para anuncios Basico o Full.',
+  },
 ]
 
 async function main() {
