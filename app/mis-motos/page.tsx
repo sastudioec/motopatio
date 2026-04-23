@@ -12,6 +12,15 @@ export default function MisMotosPage() {
   const [loading, setLoading] = useState(true)
   const [modalMoto, setModalMoto] = useState<any>(null)
   const [procesando, setProcesando] = useState<string | null>(null)
+  const [copiado, setCopiado] = useState<string | null>(null)
+
+  const copiarCodigo = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopiado(code)
+      setTimeout(() => setCopiado(c => c === code ? null : c), 1500)
+    } catch {}
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/login')
@@ -125,6 +134,15 @@ export default function MisMotosPage() {
                             <span>{moto.km?.toLocaleString()} km</span>
                             <span>{moto.ciudad}</span>
                           </div>
+                          {moto.publicId && !esBorrador && (
+                            <button
+                              type="button"
+                              onClick={() => copiarCodigo(moto.publicId)}
+                              title="Clic para copiar"
+                              style={{marginTop:'6px',background:'#f4f4f4',border:'1px solid #e0e0e0',borderRadius:'4px',padding:'3px 8px',fontSize:'11px',fontFamily:'monospace',fontWeight:700,color:'#1E2340',letterSpacing:'0.5px',cursor:'pointer'}}>
+                              {copiado === moto.publicId ? '✓ Copiado' : moto.publicId}
+                            </button>
+                          )}
                         </div>
                         <div style={{display:'flex',gap:'6px',flexDirection:'column',alignItems:'flex-end'}}>
                           <span style={{background: activo ? '#E1F5EE' : esBorrador ? '#FEF3C7' : '#f4f4f4', color: activo ? '#0F6E56' : esBorrador ? '#92400E' : '#888', padding:'3px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:700, textTransform:'uppercase'}}>

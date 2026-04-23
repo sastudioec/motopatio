@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { generateListingPublicId } from '@/lib/public-id'
 
 /**
  * POST /api/listings/draft
@@ -103,9 +104,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Crear nuevo borrador
+  const publicId = await generateListingPublicId()
   const created = await prisma.listing.create({
     data: {
       ...data,
+      publicId,
       user: { connect: { id: user.id } },
       ...(body.planId ? { plan: { connect: { id: body.planId } } } : {}),
     },

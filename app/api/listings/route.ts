@@ -10,6 +10,7 @@ import {
   calcFeaturedUntil,
 } from '@/lib/plans'
 import { buildListingSlug } from '@/lib/slug'
+import { generateListingPublicId } from '@/lib/public-id'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -79,11 +80,14 @@ export async function POST(req: NextRequest) {
   const expiraEn = calcExpiresAt(now, plan.durationDays)
   const destacadoHasta = calcFeaturedUntil(now, plan.featuredDays)
 
+  const publicId = await generateListingPublicId()
+
   // Crear la publicacion (slug se setea justo despues con el id recien creado)
   const listing = await prisma.listing.create({
     data: {
       user: { connect: { id: user.id } },
       plan: { connect: { id: plan.id } },
+      publicId,
       marca: body.marca,
       modelo: body.modelo,
       anio: parseInt(body.anio) || 0,
@@ -125,7 +129,8 @@ export async function POST(req: NextRequest) {
       user.name || 'Usuario',
       {
         titulo: body.marca + ' ' + body.modelo,
-        id: listing.id,
+        slug: (listing as any).slug || listing.id,
+        publicId,
         precio: parseInt(body.precio) || 0,
       }
     )

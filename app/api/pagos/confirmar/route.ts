@@ -4,6 +4,7 @@ import { confirmTransaction } from '@/lib/payphone'
 import { getPlanById, calcExpiresAt, calcFeaturedUntil } from '@/lib/plans'
 import { sendMotoPublicadaEmail } from '@/lib/emails'
 import { buildListingSlug } from '@/lib/slug'
+import { generateListingPublicId } from '@/lib/public-id'
 
 /**
  * Retorna la URL base publica del sitio. Evita usar req.url
@@ -106,10 +107,13 @@ export async function GET(req: NextRequest) {
   const expiraEn = calcExpiresAt(now, plan.durationDays)
   const destacadoHasta = calcFeaturedUntil(now, plan.featuredDays)
 
+  const publicId = await generateListingPublicId()
+
   const listing = await prisma.listing.create({
     data: {
       user: { connect: { id: payment.userId } },
       plan: { connect: { id: plan.id } },
+      publicId,
       marca: draft.marca,
       modelo: draft.modelo,
       anio: parseInt(String(draft.anio)) || 0,
@@ -146,7 +150,8 @@ export async function GET(req: NextRequest) {
       payment.user.name || 'Usuario',
       {
         titulo: draft.marca + ' ' + draft.modelo,
-        id: listing.id,
+        slug,
+        publicId,
         precio: parseInt(String(draft.precio)) || 0,
       }
     )

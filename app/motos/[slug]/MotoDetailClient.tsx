@@ -161,6 +161,7 @@ export default function MotoDetailClient({ moto }: { moto: any }) {
               )}
             </div>
             <h1 style={{fontFamily:'Poppins,sans-serif',fontSize:'26px',fontWeight:900,color:'#1E2340',textTransform:'uppercase',marginBottom:'4px'}}>{moto.marca} {moto.modelo}</h1>
+            {moto.publicId && <div style={{fontSize:'11px',color:'#888',marginBottom:'4px'}}>Código: <span style={{fontFamily:'monospace',fontWeight:700,color:'#1E2340',letterSpacing:'0.5px'}}>{moto.publicId}</span></div>}
             {ubicacion && <div style={{fontSize:'13px',color:'#666',marginBottom:'8px'}}>📍 {ubicacion}</div>}
 
             {/* Precio + botón compartir lado a lado */}
