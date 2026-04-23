@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { PROVINCIAS_ECUADOR, getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
+import { getPlanCopy, getPlanCtaLabel } from '@/lib/plan-copy'
 
 type PlanCatalog = {
   id: string
@@ -634,7 +635,8 @@ function PublicarContent() {
         <div style={{fontSize:'13px',color:'#666',marginBottom:'20px'}}>Escoge cómo quieres publicar tu moto. Todos los planes son pagos únicos, sin suscripciones.</div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'14px'}}>
           {plans.map(plan => {
-            const isFull = plan.id === 'full'
+            const copy = getPlanCopy(plan)
+            const isPopular = !!copy.badge
             const isGratis = plan.id === 'gratis'
             const freeActiveBlock = isGratis && hasFreeActive
             const freeCooldownBlock = isGratis && !hasFreeActive && freeCooldownDays > 0
@@ -643,15 +645,15 @@ function PublicarContent() {
             return (
               <div key={plan.id}
                 style={{
-                  border: isFull ? '2px solid #E8390E' : '1px solid #e0e0e0',
+                  border: isPopular ? '2px solid #E8390E' : '1px solid #e0e0e0',
                   borderRadius:'8px', padding:'20px', position:'relative',
-                  background: isFull ? '#fff8f5' : '#fff',
+                  background: isPopular ? '#fff8f5' : '#fff',
                   display:'flex', flexDirection:'column',
                   opacity: freeBlocked ? 0.55 : 1,
                 }}>
-                {isFull && (
+                {copy.badge && (
                   <div style={{position:'absolute',top:'-10px',right:'16px',background:'#E8390E',color:'#fff',fontSize:'10px',fontWeight:800,padding:'4px 10px',borderRadius:'4px',textTransform:'uppercase',letterSpacing:'0.5px'}}>
-                    Más vendido
+                    {copy.badge}
                   </div>
                 )}
                 <div style={{fontSize:'16px',fontWeight:900,color:'#1E2340',fontFamily:'Poppins,sans-serif',marginBottom:'4px'}}>
@@ -662,32 +664,26 @@ function PublicarContent() {
                   <span style={{fontSize:'12px',fontWeight:500,color:'#888',marginLeft:'4px'}}>USD</span>
                 </div>
                 <ul style={{listStyle:'none',padding:0,margin:'0 0 16px 0',fontSize:'13px',color:'#444',lineHeight:1.8,flex:1}}>
-                  {isGratis ? (
-                    <>
-                      <li>✓ 1 anuncio gratis cada {plan.cooldownDays} días</li>
-                      <li>✓ {plan.durationDays} días de publicación</li>
-                    </>
-                  ) : (
-                    <li>✓ {plan.durationDays} días activo</li>
-                  )}
-                  <li>✓ Hasta {plan.maxPhotos} fotos</li>
-                  {plan.featuredDays > 0 && <li>⭐ Destacado {plan.featuredDays} días</li>}
-                  {plan.id === 'basico' && <li>📊 Estadísticas básicas</li>}
-                  {plan.id === 'full' && <li>📊 Estadísticas completas</li>}
+                  {copy.features.map(f => (
+                    <li key={f}>✓ {f}</li>
+                  ))}
+                  {copy.noFeatures.map(f => (
+                    <li key={f} style={{color:'#aaa'}}>✗ {f}</li>
+                  ))}
                 </ul>
                 <button
                   onClick={() => setSelectedPlan(plan)}
                   disabled={planDisabled}
                   style={{
                     width:'100%', padding:'11px',
-                    background: isFull ? '#E8390E' : '#1E2340',
+                    background: isPopular ? '#E8390E' : '#1E2340',
                     color:'#fff', border:'none', borderRadius:'4px',
                     fontSize:'13px', fontWeight:800,
                     cursor: planDisabled ? 'not-allowed' : 'pointer',
                     textTransform:'uppercase',
                     opacity: planDisabled ? 0.5 : 1,
                   }}>
-                  Elegir {plan.name}
+                  {getPlanCtaLabel(plan)}
                 </button>
                 {freeActiveBlock && (
                   <div style={{fontSize:'11px',color:'#666',marginTop:'8px',lineHeight:1.4}}>

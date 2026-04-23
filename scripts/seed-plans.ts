@@ -17,7 +17,7 @@ const PLANES = [
   },
   {
     id: 'basico',
-    name: 'Basico',
+    name: 'Básico',
     priceCents: 500,
     durationDays: 15,
     maxPhotos: 8,
@@ -25,7 +25,7 @@ const PLANES = [
     cooldownDays: 0,
     isActive: true,
     sortOrder: 2,
-    description: 'Publicacion por 15 dias con 8 fotos y estadisticas basicas.',
+    description: 'Publicacion por 15 dias con 8 fotos.',
   },
   {
     id: 'full',
@@ -37,7 +37,7 @@ const PLANES = [
     cooldownDays: 0,
     isActive: true,
     sortOrder: 3,
-    description: 'Publicacion por 30 dias con 15 fotos, destacado 7 dias y estadisticas completas.',
+    description: 'Publicacion por 30 dias con 15 fotos y destacado por 7 dias.',
   },
 ]
 
