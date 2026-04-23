@@ -71,6 +71,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const moto = await getMoto(slug)
   if (!moto) notFound()
 
+  const brand = moto.marca
+    ? await prisma.motoBrand.findUnique({ where: { name: moto.marca }, select: { slug: true } })
+    : null
+  const marcaSlug = brand?.slug ?? null
+
   const fotos = parseFotos(moto.fotos)
   const url = `${BASE}/motos/${slug}`
   const km = typeof moto.km === 'number' ? moto.km : 0
@@ -110,14 +115,23 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     },
   }
 
+  const breadcrumbItems: Array<{ name: string; item: string }> = [
+    { name: 'Inicio', item: `${BASE}/` },
+    { name: 'Motos', item: `${BASE}/motos` },
+  ]
+  if (marcaSlug) {
+    breadcrumbItems.push({ name: moto.marca, item: `${BASE}/motos/marca/${marcaSlug}` })
+  }
+  breadcrumbItems.push({ name: `${moto.marca} ${moto.modelo}`, item: url })
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${BASE}/` },
-      { '@type': 'ListItem', position: 2, name: 'Motos', item: `${BASE}/motos` },
-      { '@type': 'ListItem', position: 3, name: `${moto.marca} ${moto.modelo} ${moto.anio}`, item: url },
-    ],
+    itemListElement: breadcrumbItems.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.name,
+      item: it.item,
+    })),
   }
 
   return (
@@ -130,7 +144,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <MotoDetailClient moto={moto} />
+      <MotoDetailClient moto={moto} marcaSlug={marcaSlug} />
     </>
   )
 }

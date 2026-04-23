@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, ReactNode } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import Breadcrumb from '@/app/components/Breadcrumb'
 import { puedeCircularElDia } from '@/lib/picoyplaca'
 import { PROVINCIAS_ECUADOR } from '@/lib/provincias-ecuador'
 
@@ -268,6 +269,10 @@ export default function MotosClient({ bannerTop, bannerMidLeft, bannerMidRight }
     <div style={{minHeight:'100vh',background:'#f4f4f4'}}>
       <div style={{maxWidth:'1200px',margin:'24px auto',padding:'0 16px'}}>
         <div style={{marginBottom:'20px'}}>{bannerTop}</div>
+        <Breadcrumb items={[
+          { label: 'Inicio', href: '/' },
+          { label: 'Motos' },
+        ]} />
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px',flexWrap:'wrap',gap:'12px'}}>
           <div>
             <h1 style={{fontFamily:'Poppins,sans-serif',fontSize:'24px',fontWeight:900,color:'#1E2340'}}>Motos en venta</h1>

@@ -3,9 +3,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
+import Breadcrumb from '@/app/components/Breadcrumb'
 import { calcularPicoYPlaca } from '@/lib/picoyplaca'
 
-export default function MotoDetailClient({ moto }: { moto: any }) {
+function truncateLabel(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max - 1) + '…' : s
+}
+
+export default function MotoDetailClient({ moto, marcaSlug }: { moto: any; marcaSlug?: string | null }) {
   const { data: session } = useSession()
   const [fotoActual, setFotoActual] = useState(0)
   const [shareOpen, setShareOpen] = useState(false)
@@ -109,7 +114,12 @@ export default function MotoDetailClient({ moto }: { moto: any }) {
   return (
     <div style={{minHeight:'100vh',background:'#f4f4f4'}}>
       <div style={{maxWidth:'1000px',margin:'24px auto',padding:'0 20px'}}>
-        <Link href="/motos" style={{fontSize:'13px',color:'#E8390E',textDecoration:'none',fontWeight:600,display:'inline-block',marginBottom:'16px'}}>← Volver al catálogo</Link>
+        <Breadcrumb items={[
+          { label: 'Inicio', href: '/' },
+          { label: 'Motos', href: '/motos' },
+          marcaSlug ? { label: moto.marca, href: `/motos/marca/${marcaSlug}` } : { label: moto.marca },
+          { label: truncateLabel(`${moto.marca} ${moto.modelo}`, 40) },
+        ]} />
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'24px'}} className="grid-detalle">
           <div>
