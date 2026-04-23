@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { confirmTransaction } from '@/lib/payphone'
+import { confirmTransaction, mapPayphoneStatus } from '@/lib/payphone'
 import { activatePayment } from '@/lib/payments/activate'
+import { handleRejectedPayment } from '@/lib/payments/reject'
 
 function getBaseUrl(): string {
   const url = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL
@@ -34,9 +35,9 @@ export async function GET(req: NextRequest) {
     return redirectTo('/pago/resultado?status=error&reason=notfound')
   }
 
-  // Idempotencia: si ya fue aprobado, no reprocesar. activatePayment es
-  // idempotente tambien, asi que en caso de race entre redirect y cron,
-  // el segundo llamador ve already_active.
+  // Idempotencia: si ya fue aprobado, activate es idempotente (either activa
+  // o devuelve already_active). Sirve como fallback si el reconciliador
+  // aprobo el pago antes de que el usuario regrese.
   if (payment.status === 'approved') {
     const result = await activatePayment(payment.id)
     const listingId =
@@ -65,28 +66,36 @@ export async function GET(req: NextRequest) {
     return redirectTo('/pago/resultado?status=error&reason=confirm&paymentId=' + payment.id)
   }
 
-  const approved = ppResponse.transactionStatus === 'Approved'
-  const canceled = ppResponse.transactionStatus === 'Canceled'
-  const newStatus = approved ? 'approved' : canceled ? 'cancelled' : 'rejected'
+  const { paymentStatus } = mapPayphoneStatus(ppResponse)
 
+  if (paymentStatus === 'pending') {
+    // No tocamos el status (sigue pending); el reconciliador lo revisara.
+    return redirectTo('/pago/resultado?status=error&reason=pending&paymentId=' + payment.id)
+  }
+
+  if (paymentStatus === 'cancelled' || paymentStatus === 'rejected') {
+    await handleRejectedPayment(payment.id, {
+      newStatus: paymentStatus,
+      payphoneTransactionId: String(ppResponse.transactionId || id),
+      rawResponse: ppResponse,
+      sendEmail: false, // user-facing: la UI /pago/resultado cubre
+    })
+    return redirectTo(
+      '/pago/resultado?status=' + paymentStatus + '&paymentId=' + payment.id
+    )
+  }
+
+  // paymentStatus === 'approved'
   await prisma.payment.update({
     where: { id: payment.id },
     data: {
-      status: newStatus,
+      status: 'approved',
       payphoneTransactionId: String(ppResponse.transactionId || id),
       payphoneRawResponse: JSON.stringify(ppResponse),
       confirmedAt: new Date(),
     },
   })
 
-  if (canceled) {
-    return redirectTo('/pago/resultado?status=cancelled&paymentId=' + payment.id)
-  }
-  if (!approved) {
-    return redirectTo('/pago/resultado?status=rejected&paymentId=' + payment.id)
-  }
-
-  // Pago aprobado: delegar activacion al helper
   const result = await activatePayment(payment.id)
   if (result.status === 'missing_data') {
     console.error('Pago aprobado pero faltan datos:', payment.id, result.reason)

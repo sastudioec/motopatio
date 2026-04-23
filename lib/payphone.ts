@@ -94,6 +94,26 @@ export async function confirmTransaction(params: {
   return data
 }
 
+export type PaymentStatus = 'approved' | 'rejected' | 'cancelled' | 'pending' | 'error'
+
+/**
+ * Traduce la respuesta de PayPhone al estado interno del Payment.
+ * Mantiene 'pending' como estado real (antes caia a 'rejected' por error).
+ */
+export function mapPayphoneStatus(res: PayPhoneConfirmResponse): {
+  paymentStatus: PaymentStatus
+  reason?: string
+} {
+  const s = res.transactionStatus
+  if (s === 'Approved') return { paymentStatus: 'approved' }
+  if (s === 'Canceled') return { paymentStatus: 'cancelled', reason: res.message }
+  if (s === 'Pending') return { paymentStatus: 'pending', reason: 'PayPhone todavia no decide' }
+  return {
+    paymentStatus: 'rejected',
+    reason: res.message || 'Estado no reconocido: ' + String(s),
+  }
+}
+
 /**
  * Config publica para inicializar la Cajita en el frontend.
  * NO incluye el token (solo server-side). StoreId es publico.

@@ -46,6 +46,32 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
   return resend.emails.send({ from: 'MotoPatio <noreply@motopatio.com>', to, subject: 'Restablece tu contraseña en MotoPatio', html: wrap(body) })
 }
 
+export async function sendPagoNoCompletadoEmail(
+  to: string,
+  name: string,
+  info: { titulo: string; motivo: 'cancelled' | 'rejected'; paymentId: string }
+) {
+  const n = (name || '').split(' ')[0] || 'hola'
+  const mensaje =
+    info.motivo === 'cancelled'
+      ? 'Cancelaste el pago antes de finalizar. No se realizó ningún cargo.'
+      : 'Tu banco rechazó la transacción. No se realizó ningún cargo.'
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">Tu pago no se completó</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, ' + mensaje + ' Tu anuncio quedó guardado y puedes reintentar cuando quieras.</p>' +
+    '<div style="background:#f9f9fb;border-radius:8px;padding:16px 20px;margin:16px 0;border-left:4px solid #e8572a;">' +
+    '<p style="margin:0 0 4px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Anuncio sin publicar</p>' +
+    '<p style="margin:0;font-size:17px;font-weight:700;color:#1a1f36;">' + info.titulo + '</p>' +
+    '</div>' +
+    btn(BASE + '/publicar?retry=' + info.paymentId, 'Intentar de nuevo')
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: 'Tu pago en MotoPatio no se completó',
+    html: wrap(body),
+  })
+}
+
 export async function sendMotoPublicadaEmail(to: string, name: string, moto: { titulo: string; slug: string; publicId: string; precio: number }) {
   const n = name.split(' ')[0]
   const precio = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(moto.precio)

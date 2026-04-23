@@ -128,6 +128,7 @@ function ResultadoContent() {
     confirm: 'No pudimos confirmar el pago con PayPhone. Si te cobraron, contáctanos.',
     nodraft: 'Tu pago fue aprobado pero perdimos los datos de la moto. Contáctanos urgente.',
     noplan: 'Tu pago fue aprobado pero hubo un problema con el plan. Contáctanos urgente.',
+    pending: 'Tu pago está siendo procesado. Te enviaremos un correo en cuanto tengamos la respuesta final, o puedes volver más tarde a revisar.',
   }
 
   return (
