@@ -13,7 +13,7 @@ export default function PreciosClient() {
       duracion: 5,
       destacado: false,
       color: '#6b7280',
-      features: ['1 anuncio activo', '5 días de publicación', 'Hasta 4 fotos', 'Visible en catálogo'],
+      features: ['1 anuncio gratis cada 30 días', '5 días de publicación', 'Hasta 4 fotos', 'Visible en catálogo'],
       noFeatures: ['Sin destacado', 'Sin renovación automática'],
     },
     {

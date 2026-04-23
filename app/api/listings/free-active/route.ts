@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getFreePlanState } from '@/lib/plans'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -14,14 +15,10 @@ export async function GET() {
   })
   if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
 
-  const existing = await prisma.listing.findFirst({
-    where: {
-      userId: user.id,
-      planTipo: 'gratis',
-      estado: 'activo',
-      expiraEn: { gt: new Date() },
-    },
-    select: { id: true },
+  const state = await getFreePlanState(user.id)
+  return NextResponse.json({
+    hasFreeActive: state.hasFreeActive,
+    cooldownUntil: state.cooldownUntil,
+    daysRemaining: state.daysRemaining,
   })
-  return NextResponse.json({ hasFreeActive: !!existing })
 }

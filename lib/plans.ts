@@ -61,40 +61,87 @@ export function calcFeaturedUntil(
 }
 
 /**
+ * Retorna el estado del plan Gratis para un usuario:
+ *   - hasFreeActive: si tiene un listing Gratis activo y vigente (expiraEn futuro)
+ *   - cooldownUntil: fecha hasta la cual no puede publicar gratis (null si puede)
+ *   - daysRemaining: dias que faltan para desbloquearse (0 si puede ya)
+ *
+ * Regla: 1 anuncio cada 30 dias, contado desde createdAt del ULTIMO Gratis
+ * del usuario sin importar estado. Si suspende antes, NO se recupera el cupo.
+ */
+export async function getFreePlanState(
+  userId: string
+): Promise<{
+  hasFreeActive: boolean
+  cooldownUntil: Date | null
+  daysRemaining: number
+}> {
+  const plan = await getPlanById('gratis')
+  const cooldownDays = plan.cooldownDays
+  const now = new Date()
+
+  // Activo: listing Gratis con estado=activo y expiraEn futuro
+  const activo = await prisma.listing.findFirst({
+    where: {
+      userId,
+      planTipo: 'gratis',
+      estado: 'activo',
+      expiraEn: { gt: now },
+    },
+    select: { id: true },
+  })
+
+  // Ultimo Gratis (sin importar estado) para cooldown
+  const ultimoGratis = await prisma.listing.findFirst({
+    where: { userId, planTipo: 'gratis' },
+    select: { createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  let cooldownUntil: Date | null = null
+  let daysRemaining = 0
+  if (ultimoGratis) {
+    const fin = new Date(ultimoGratis.createdAt)
+    fin.setDate(fin.getDate() + cooldownDays)
+    if (fin > now) {
+      cooldownUntil = fin
+      daysRemaining = Math.ceil((fin.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    }
+  }
+
+  return { hasFreeActive: !!activo, cooldownUntil, daysRemaining }
+}
+
+/**
  * Valida si un usuario puede publicar con el plan gratuito ahora.
- * Retorna { allowed, nextAvailableAt, daysRemaining } donde:
- *   - allowed: si puede publicar
- *   - nextAvailableAt: cuando podra publicar gratis de nuevo (si no allowed)
- *   - daysRemaining: cuantos dias le faltan para desbloquearse
+ * Bloquea si ya tiene un Gratis activo O si esta en cooldown de 30 dias.
  */
 export async function canPublishFreePlan(
   userId: string
 ): Promise<{ allowed: true } | {
   allowed: false
-  nextAvailableAt: Date
+  reason: 'active' | 'cooldown'
+  nextAvailableAt: Date | null
   daysRemaining: number
 }> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { lastFreePublicationAt: true },
-  })
-
-  if (!user) throw new Error('Usuario no encontrado')
-
-  // Nunca publico gratis: permitido
-  if (!user.lastFreePublicationAt) return { allowed: true }
-
-  const cooldownDays = (await getPlanById('gratis')).cooldownDays
-  const nextAvailableAt = new Date(user.lastFreePublicationAt)
-  nextAvailableAt.setDate(nextAvailableAt.getDate() + cooldownDays)
-
-  const now = new Date()
-  if (now >= nextAvailableAt) return { allowed: true }
-
-  const msRemaining = nextAvailableAt.getTime() - now.getTime()
-  const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24))
-
-  return { allowed: false, nextAvailableAt, daysRemaining }
+  const state = await getFreePlanState(userId)
+  if (state.hasFreeActive) {
+    return {
+      allowed: false,
+      reason: 'active',
+      nextAvailableAt: state.cooldownUntil,
+      daysRemaining: state.daysRemaining,
+    }
+  }
+  if (state.cooldownUntil) {
+    return {
+      allowed: false,
+      reason: 'cooldown',
+      nextAvailableAt: state.cooldownUntil,
+      daysRemaining: state.daysRemaining,
+    }
+  }
+  return { allowed: true }
 }
 
 /**

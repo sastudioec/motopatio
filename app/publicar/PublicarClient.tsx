@@ -68,6 +68,7 @@ function PublicarContent() {
   const [cajitaLoading, setCajitaLoading] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
   const [hasFreeActive, setHasFreeActive] = useState(false)
+  const [freeCooldownDays, setFreeCooldownDays] = useState(0)
 
   useEffect(() => {
     fetch('/api/plans')
@@ -102,9 +103,12 @@ function PublicarContent() {
   useEffect(() => {
     if (!session?.user?.email) return
     fetch('/api/listings/free-active', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : { hasFreeActive: false })
-      .then(d => setHasFreeActive(!!d.hasFreeActive))
-      .catch(() => setHasFreeActive(false))
+      .then(r => r.ok ? r.json() : { hasFreeActive: false, daysRemaining: 0 })
+      .then(d => {
+        setHasFreeActive(!!d.hasFreeActive)
+        setFreeCooldownDays(typeof d.daysRemaining === 'number' ? d.daysRemaining : 0)
+      })
+      .catch(() => { setHasFreeActive(false); setFreeCooldownDays(0) })
   }, [session])
 
   // Cargar draft guardado si venimos de un reintento (?retry=paymentId)
@@ -584,7 +588,7 @@ function PublicarContent() {
     try {
       const data = await res.json()
       if (res.status === 429 && data.daysRemaining) {
-        setPublishError('Ya usaste tu publicación gratuita del mes. Podrás publicar gratis de nuevo en ' + data.daysRemaining + ' día(s), o elige el plan Básico o Full para publicar ahora.')
+        setPublishError('Ya usaste tu anuncio gratis. Podrás publicar gratis de nuevo en ' + data.daysRemaining + ' día(s), o elige Básico o Full para publicar ahora.')
       } else if (data.error) {
         setPublishError(data.error + (data.message ? ': ' + data.message : ''))
       } else {
@@ -631,7 +635,10 @@ function PublicarContent() {
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'14px'}}>
           {plans.map(plan => {
             const isFull = plan.id === 'full'
-            const freeBlocked = plan.id === 'gratis' && hasFreeActive
+            const isGratis = plan.id === 'gratis'
+            const freeActiveBlock = isGratis && hasFreeActive
+            const freeCooldownBlock = isGratis && !hasFreeActive && freeCooldownDays > 0
+            const freeBlocked = freeActiveBlock || freeCooldownBlock
             const planDisabled = blocked || isLoadingVerif || freeBlocked
             return (
               <div key={plan.id}
@@ -655,10 +662,16 @@ function PublicarContent() {
                   <span style={{fontSize:'12px',fontWeight:500,color:'#888',marginLeft:'4px'}}>USD</span>
                 </div>
                 <ul style={{listStyle:'none',padding:0,margin:'0 0 16px 0',fontSize:'13px',color:'#444',lineHeight:1.8,flex:1}}>
-                  <li>✓ {plan.durationDays} días activo</li>
+                  {isGratis ? (
+                    <>
+                      <li>✓ 1 anuncio gratis cada {plan.cooldownDays} días</li>
+                      <li>✓ {plan.durationDays} días de publicación</li>
+                    </>
+                  ) : (
+                    <li>✓ {plan.durationDays} días activo</li>
+                  )}
                   <li>✓ Hasta {plan.maxPhotos} fotos</li>
                   {plan.featuredDays > 0 && <li>⭐ Destacado {plan.featuredDays} días</li>}
-                  {plan.id === 'gratis' && <li style={{color:'#888',fontSize:'12px'}}>1 uso cada {plan.cooldownDays} días</li>}
                   {plan.id === 'basico' && <li>📊 Estadísticas básicas</li>}
                   {plan.id === 'full' && <li>📊 Estadísticas completas</li>}
                 </ul>
@@ -676,9 +689,14 @@ function PublicarContent() {
                   }}>
                   Elegir {plan.name}
                 </button>
-                {freeBlocked && (
+                {freeActiveBlock && (
                   <div style={{fontSize:'11px',color:'#666',marginTop:'8px',lineHeight:1.4}}>
-                    Ya tienes un anuncio gratuito activo. Elige Básico o Full, o suspende/elimina el actual.
+                    Ya tienes un anuncio gratuito activo. Espera a que expire, o elige Básico o Full.
+                  </div>
+                )}
+                {freeCooldownBlock && (
+                  <div style={{fontSize:'11px',color:'#666',marginTop:'8px',lineHeight:1.4}}>
+                    Ya usaste tu anuncio gratis. Podrás publicar gratis de nuevo en {freeCooldownDays} día{freeCooldownDays === 1 ? '' : 's'}, o elige Básico/Full para publicar ahora.
                   </div>
                 )}
               </div>

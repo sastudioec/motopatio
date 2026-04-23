@@ -46,40 +46,26 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Plan gratis: validar cooldown
+  // Plan gratis: validar regla de 1 anuncio cada 30 dias + no tener activo
   if (plan.id === 'gratis') {
     const check = await canPublishFreePlan(user.id)
     if (!check.allowed) {
+      const message =
+        check.reason === 'active'
+          ? 'Ya tienes un anuncio gratuito activo. Suspendelo, espera a que expire, o elige Basico/Full.'
+          : `Debes esperar ${check.daysRemaining} dia(s) para publicar gratis de nuevo.`
       return NextResponse.json(
         {
-          error: 'Cooldown activo para plan Gratis',
-          message: `Debes esperar ${check.daysRemaining} dia(s) para publicar gratis de nuevo.`,
+          error:
+            check.reason === 'active'
+              ? 'Ya tienes un anuncio Gratis activo'
+              : 'Cooldown activo para plan Gratis',
+          reason: check.reason,
+          message,
           nextAvailableAt: check.nextAvailableAt,
           daysRemaining: check.daysRemaining,
         },
-        { status: 429 }
-      )
-    }
-
-    // Plan Gratis: solo 1 anuncio activo simultaneo por usuario.
-    // Nota: ventana de carrera teorica aceptada como deuda tecnica — dos requests
-    // concurrentes podrian ambos pasar este check antes de que ninguno cree el listing.
-    // Mitigacion futura: unique index parcial o transaccion serializable.
-    const activeFree = await prisma.listing.findFirst({
-      where: {
-        userId: user.id,
-        planTipo: 'gratis',
-        estado: 'activo',
-        expiraEn: { gt: new Date() },
-      },
-      select: { id: true },
-    })
-    if (activeFree) {
-      return NextResponse.json(
-        {
-          error: 'Ya tienes un anuncio activo gratuito. Suspende o elimina el actual, o elige un plan pagado para publicar otro.',
-        },
-        { status: 400 }
+        { status: check.reason === 'active' ? 400 : 429 }
       )
     }
   }
