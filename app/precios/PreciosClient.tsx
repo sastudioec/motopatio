@@ -123,21 +123,38 @@ export default function PreciosClient() {
                     </div>
 
                     <div style={{ marginBottom: '24px' }}>
-                      {copy.features.map((f) => (
-                        <div
-                          key={f}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            marginBottom: '8px',
-                            fontSize: '13px',
-                            color: '#333',
-                          }}
-                        >
-                          <span style={{ color: '#0F6E56', fontWeight: 700 }}>✓</span> {f}
-                        </div>
-                      ))}
+                      {copy.features.map((f) =>
+                        f.highlight ? (
+                          <div
+                            key={f.text}
+                            style={{
+                              background: '#fff4e6',
+                              borderRadius: '6px',
+                              padding: '10px 12px',
+                              marginBottom: '8px',
+                              fontSize: '13px',
+                              color: '#E8390E',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {f.text}
+                          </div>
+                        ) : (
+                          <div
+                            key={f.text}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              marginBottom: '8px',
+                              fontSize: '13px',
+                              color: '#333',
+                            }}
+                          >
+                            <span style={{ color: '#0F6E56', fontWeight: 700 }}>✓</span> {f.text}
+                          </div>
+                        )
+                      )}
                       {copy.noFeatures.map((f) => (
                         <div
                           key={f}

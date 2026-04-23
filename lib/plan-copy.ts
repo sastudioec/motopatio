@@ -13,8 +13,13 @@ export type PlanForCopy = {
   cooldownDays: number
 }
 
+export type PlanFeature = {
+  text: string
+  highlight?: boolean
+}
+
 export type PlanCopy = {
-  features: string[]
+  features: PlanFeature[]
   noFeatures: string[]
   badge: string | null
 }
@@ -23,10 +28,10 @@ export function getPlanCopy(plan: PlanForCopy): PlanCopy {
   if (plan.id === 'gratis') {
     return {
       features: [
-        `1 anuncio gratis cada ${plan.cooldownDays} días`,
-        `${plan.durationDays} días de publicación`,
-        `Hasta ${plan.maxPhotos} fotos`,
-        'Visible en catálogo',
+        { text: `1 anuncio gratis cada ${plan.cooldownDays} días` },
+        { text: `${plan.durationDays} días de publicación` },
+        { text: `Hasta ${plan.maxPhotos} fotos` },
+        { text: 'Visible en catálogo' },
       ],
       noFeatures: ['Sin destacado', 'Sin renovación automática'],
       badge: null,
@@ -35,26 +40,26 @@ export function getPlanCopy(plan: PlanForCopy): PlanCopy {
   if (plan.id === 'basico') {
     return {
       features: [
-        `${plan.durationDays} días de publicación`,
-        `Hasta ${plan.maxPhotos} fotos`,
-        'Visible en catálogo',
-        'Pago único por publicación',
+        { text: `${plan.durationDays} días de publicación` },
+        { text: `Hasta ${plan.maxPhotos} fotos` },
+        { text: 'Visible en catálogo' },
+        { text: 'Pago único por publicación' },
       ],
       noFeatures: ['Sin destacado'],
       badge: null,
     }
   }
   if (plan.id === 'full') {
-    const destacado =
+    const destacado: PlanFeature[] =
       plan.featuredDays > 0
-        ? [`Destacado por ${plan.featuredDays} días`, 'Aparece primero']
+        ? [{ text: `⭐ Destacado ${plan.featuredDays} días incluido`, highlight: true }]
         : []
     return {
       features: [
-        `${plan.durationDays} días de publicación`,
-        `Hasta ${plan.maxPhotos} fotos`,
+        { text: `${plan.durationDays} días de publicación` },
+        { text: `Hasta ${plan.maxPhotos} fotos` },
         ...destacado,
-        'Pago único por publicación',
+        { text: 'Pago único por publicación' },
       ],
       noFeatures: [],
       badge: 'Más popular',
@@ -62,8 +67,8 @@ export function getPlanCopy(plan: PlanForCopy): PlanCopy {
   }
   return {
     features: [
-      `${plan.durationDays} días de publicación`,
-      `Hasta ${plan.maxPhotos} fotos`,
+      { text: `${plan.durationDays} días de publicación` },
+      { text: `Hasta ${plan.maxPhotos} fotos` },
     ],
     noFeatures: [],
     badge: null,

@@ -665,7 +665,13 @@ function PublicarContent() {
                 </div>
                 <ul style={{listStyle:'none',padding:0,margin:'0 0 16px 0',fontSize:'13px',color:'#444',lineHeight:1.8,flex:1}}>
                   {copy.features.map(f => (
-                    <li key={f}>✓ {f}</li>
+                    f.highlight ? (
+                      <li key={f.text} style={{background:'#fff4e6',borderRadius:'4px',padding:'6px 10px',margin:'4px 0',fontWeight:700,color:'#E8390E'}}>
+                        {f.text}
+                      </li>
+                    ) : (
+                      <li key={f.text}>✓ {f.text}</li>
+                    )
                   ))}
                   {copy.noFeatures.map(f => (
                     <li key={f} style={{color:'#aaa'}}>✗ {f}</li>
