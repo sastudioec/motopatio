@@ -95,7 +95,9 @@ export default async function Home() {
   return (
     <main>
       
-      <Hero bannerSlot={<Banner position="hero" fill objectFit="contain" />} />
+      <div style={{maxWidth:'1200px',margin:'0 auto'}}>
+        <Hero bannerSlot={<Banner position="hero" fill objectFit="contain" />} />
+      </div>
       <div style={{background:'#f4f4f4'}}>
         {destacadas.length > 0 && (
           <div style={{padding:'24px 20px',maxWidth:'1200px',margin:'0 auto'}}>
