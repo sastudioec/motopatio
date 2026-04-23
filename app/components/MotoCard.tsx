@@ -13,6 +13,7 @@ type MotoLike = {
   provincia?: string | null
   fotos?: string | null
   destacado?: boolean
+  destacadoHasta?: string | Date | null
   esElectrica?: boolean
 }
 
@@ -26,6 +27,7 @@ export default function MotoCard({ l }: { l: MotoLike }) {
   })()
   const href = '/motos/' + (l.slug || l.id)
   const ubicacion = l.provincia ? `${l.ciudad}, ${l.provincia}` : l.ciudad
+  const isDestacado = !!l.destacadoHasta && new Date(l.destacadoHasta).getTime() > Date.now()
   return (
     <Link href={href} style={{ textDecoration: 'none' }}>
       <div
@@ -33,7 +35,7 @@ export default function MotoCard({ l }: { l: MotoLike }) {
           background: '#fff',
           borderRadius: '4px',
           overflow: 'hidden',
-          border: l.destacado ? '1.5px solid #E8390E' : '1.5px solid #e8e8e8',
+          border: isDestacado ? '1.5px solid #E8390E' : '1.5px solid #e8e8e8',
         }}
       >
         <div
@@ -59,7 +61,7 @@ export default function MotoCard({ l }: { l: MotoLike }) {
           ) : (
             '🏍️'
           )}
-          {l.destacado && (
+          {isDestacado && (
             <div
               style={{
                 position: 'absolute',

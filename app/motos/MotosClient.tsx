@@ -114,7 +114,11 @@ export default function MotosClient({ bannerTop, bannerMidLeft, bannerMidRight }
     if (filtros.orden === 'precio_asc') r = [...r].sort((a,b) => a.precio - b.precio)
     else if (filtros.orden === 'precio_desc') r = [...r].sort((a,b) => b.precio - a.precio)
     else if (filtros.orden === 'km_asc') r = [...r].sort((a,b) => a.km - b.km)
-    else if (filtros.orden === 'destacadas') r = [...r].sort((a,b) => (b.destacado?1:0) - (a.destacado?1:0))
+    else if (filtros.orden === 'destacadas') {
+      const now = Date.now()
+      const score = (m: any) => (m.destacadoHasta && new Date(m.destacadoHasta).getTime() > now ? 1 : 0)
+      r = [...r].sort((a,b) => score(b) - score(a))
+    }
     return r
   }, [motos, filtros])
 

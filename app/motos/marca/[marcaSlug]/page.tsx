@@ -13,7 +13,7 @@ async function getData(marcaSlug: string) {
   if (!brand) return null
   const listings = await prisma.listing.findMany({
     where: { estado: 'activo', marca: brand.name },
-    orderBy: [{ destacado: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],
     take: 48,
   })
   const minPrecio = listings.length ? Math.min(...listings.map(l => l.precio || 0).filter(n => n > 0)) : null
