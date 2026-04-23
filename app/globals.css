@@ -30,3 +30,15 @@ img {
 @media (min-width: 769px) {
   .mobile-only { display: none !important; }
 }
+
+.home-motos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+@media (min-width: 769px) {
+  .home-motos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 280px));
+    justify-content: center;
+  }
+}

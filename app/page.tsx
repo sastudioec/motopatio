@@ -106,7 +106,7 @@ export default async function Home() {
               </div>
               <Link href="/motos" style={{fontSize:'11px',color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Mostrar todo</Link>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px'}}>
+            <div className="home-motos-grid">
               {destacadas.map(l => <MotoCard key={l.id} l={l} />)}
             </div>
           </div>
@@ -129,7 +129,7 @@ export default async function Home() {
               Por ahora todas las motos activas están destacadas. <Link href="/motos" style={{color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Ver todas</Link>
             </div>
           ) : (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px'}}>
+            <div className="home-motos-grid">
               {recientes.slice(0,4).map(l => <MotoCard key={l.id} l={l} />)}
             </div>
           )}

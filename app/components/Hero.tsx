@@ -44,13 +44,29 @@ export default function Hero({ bannerSlot }: Props) {
     textTransform: 'uppercase' as const,
   }
 
+  // Implementacion W3C "visually-hidden" — elementos en el DOM para SEO y
+  // lectores de pantalla, invisibles para usuarios. No depende de Tailwind.
+  const srOnly: React.CSSProperties = {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    padding: 0,
+    margin: '-1px',
+    overflow: 'hidden',
+    clip: 'rect(0,0,0,0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+  }
+
+  const heroHeight = isMobile ? '220px' : '320px'
+
   return (
     <div
       style={{
         position: 'relative',
         background: '#1E2340',
         overflow: 'hidden',
-        minHeight: isMobile ? '260px' : '360px',
+        height: heroHeight,
       }}
     >
       {bannerSlot}
@@ -60,16 +76,16 @@ export default function Hero({ bannerSlot }: Props) {
           zIndex: 1,
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: isMobile ? '24px 12px' : '40px 24px',
+          padding: isMobile ? '16px 12px' : '24px 24px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
-          minHeight: isMobile ? '260px' : '360px',
+          height: '100%',
           boxSizing: 'border-box',
         }}
       >
-        <h1 className="sr-only">Motos usadas y nuevas en Ecuador</h1>
-        <p className="sr-only">
+        <h1 style={srOnly}>Motos usadas y nuevas en Ecuador</h1>
+        <p style={srOnly}>
           Compra, vende y publica motos en Quito, Guayaquil, Cuenca y todo el país. Shineray, Honda, Yamaha, Bajaj, Suzuki y más de 20 marcas.
         </p>
         <div
