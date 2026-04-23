@@ -94,6 +94,49 @@ export async function confirmTransaction(params: {
   return data
 }
 
+/**
+ * Consulta el estado de una transaccion usando el clientTransactionId que
+ * nosotros generamos. Util para el reconciliador cuando no tenemos el
+ * payphoneTransactionId (porque el usuario nunca volvio del redirect).
+ *
+ * GET /api/Sale/client/{clientTxId}
+ * Limite documentado: 30 calls/min.
+ */
+export async function querySaleByClientTxId(
+  clientTxId: string
+): Promise<PayPhoneConfirmResponse | null> {
+  const { token } = getConfig()
+
+  const res = await fetch(PAYPHONE_API_BASE + '/Sale/client/' + encodeURIComponent(clientTxId), {
+    method: 'GET',
+    headers: { Authorization: 'Bearer ' + token },
+  })
+
+  if (res.status === 404) return null
+
+  const text = await res.text()
+  if (isUserCancellationHtml(text)) {
+    return {
+      clientTransactionId: clientTxId,
+      transactionStatus: 'Canceled',
+      message: 'PayPhone devolvio HTML de error; tratado como Canceled',
+    } as PayPhoneConfirmResponse
+  }
+
+  let data: PayPhoneConfirmResponse = {}
+  try {
+    data = JSON.parse(text)
+  } catch {
+    throw new Error('PayPhone Sale/client respondio no-JSON: ' + text.slice(0, 500))
+  }
+  if (!res.ok) {
+    throw new Error(
+      'PayPhone Sale/client fallo ' + res.status + ': ' + (data.message || text.slice(0, 200))
+    )
+  }
+  return data
+}
+
 export type PaymentStatus = 'approved' | 'rejected' | 'cancelled' | 'pending' | 'error'
 
 /**
