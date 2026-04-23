@@ -107,12 +107,3 @@ export function getPublicCajitaConfig() {
   }
 }
 
-/**
- * Genera un clientTransactionId unico para una transaccion.
- * Formato: MP-{timestamp}-{random}
- */
-export function generateClientTxId(): string {
-  const ts = Date.now().toString(36)
-  const rand = Math.random().toString(36).slice(2, 10)
-  return 'MP-' + ts + '-' + rand
-}

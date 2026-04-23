@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPlanById } from '@/lib/plans'
-import { getPublicCajitaConfig, generateClientTxId } from '@/lib/payphone'
+import { getPublicCajitaConfig } from '@/lib/payphone'
+import { generateClientTxId } from '@/lib/payments'
 
 type BodyData = {
   planId: string
@@ -84,18 +85,19 @@ export async function POST(req: NextRequest) {
 
   // Crear Payment pending con snapshot del listing en payphoneRawResponse
   // (lo guardamos ahi temporalmente; al confirmarse el pago creamos el listing real)
-  const clientTransactionId = generateClientTxId()
+  const clientTransactionId = generateClientTxId('plan')
 
   const payment = await prisma.payment.create({
     data: {
       userId: user.id,
       planId: plan.id,
-      concept: 'plan_' + plan.id,
+      concept: 'plan',
+      planTipo: plan.id,
       amountCents: plan.priceCents,
       currency: 'USD',
       status: 'pending',
       clientTransactionId,
-      payphoneRawResponse: JSON.stringify({ listingDraft }),
+      metadata: { listingDraft } as object,
     },
   })
 

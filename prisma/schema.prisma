@@ -103,12 +103,15 @@ model Payment {
   planId                String?
   plan                  Plan?     @relation(fields: [planId], references: [id])
   concept               String
+  planTipo              String?
+  featuredDays          Int?
   amountCents           Int
   currency              String    @default("USD")
   status                String    @default("pending")
   clientTransactionId   String    @unique
   payphoneTransactionId String?
   payphoneRawResponse   String?   @db.Text
+  metadata              Json?
   errorMessage          String?   @db.Text
   createdAt             DateTime  @default(now())
   confirmedAt           DateTime?
@@ -116,6 +119,9 @@ model Payment {
 
   @@index([userId, status])
   @@index([status, createdAt])
+  @@index([listingId])
+  @@index([payphoneTransactionId])
+  @@index([concept, status])
 }
 
 model Account {
