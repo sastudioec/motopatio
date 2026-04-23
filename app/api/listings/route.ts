@@ -60,6 +60,28 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       )
     }
+
+    // Plan Gratis: solo 1 anuncio activo simultaneo por usuario.
+    // Nota: ventana de carrera teorica aceptada como deuda tecnica — dos requests
+    // concurrentes podrian ambos pasar este check antes de que ninguno cree el listing.
+    // Mitigacion futura: unique index parcial o transaccion serializable.
+    const activeFree = await prisma.listing.findFirst({
+      where: {
+        userId: user.id,
+        planTipo: 'gratis',
+        estado: 'activo',
+        expiraEn: { gt: new Date() },
+      },
+      select: { id: true },
+    })
+    if (activeFree) {
+      return NextResponse.json(
+        {
+          error: 'Ya tienes un anuncio activo gratuito. Suspende o elimina el actual, o elige un plan pagado para publicar otro.',
+        },
+        { status: 400 }
+      )
+    }
   }
 
   // Validar limite de fotos segun el plan

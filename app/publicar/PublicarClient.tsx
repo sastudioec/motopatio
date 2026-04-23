@@ -67,6 +67,7 @@ function PublicarContent() {
   const [publishError, setPublishError] = useState<string | null>(null)
   const [cajitaLoading, setCajitaLoading] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
+  const [hasFreeActive, setHasFreeActive] = useState(false)
 
   useEffect(() => {
     fetch('/api/plans')
@@ -96,6 +97,14 @@ function PublicarContent() {
         .then(d => setEmailVerified(d.verified))
         .catch(() => setEmailVerified(true))
     }
+  }, [session])
+
+  useEffect(() => {
+    if (!session?.user?.email) return
+    fetch('/api/listings/free-active', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : { hasFreeActive: false })
+      .then(d => setHasFreeActive(!!d.hasFreeActive))
+      .catch(() => setHasFreeActive(false))
   }, [session])
 
   // Cargar draft guardado si venimos de un reintento (?retry=paymentId)
@@ -622,6 +631,8 @@ function PublicarContent() {
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'14px'}}>
           {plans.map(plan => {
             const isFull = plan.id === 'full'
+            const freeBlocked = plan.id === 'gratis' && hasFreeActive
+            const planDisabled = blocked || isLoadingVerif || freeBlocked
             return (
               <div key={plan.id}
                 style={{
@@ -629,6 +640,7 @@ function PublicarContent() {
                   borderRadius:'8px', padding:'20px', position:'relative',
                   background: isFull ? '#fff8f5' : '#fff',
                   display:'flex', flexDirection:'column',
+                  opacity: freeBlocked ? 0.55 : 1,
                 }}>
                 {isFull && (
                   <div style={{position:'absolute',top:'-10px',right:'16px',background:'#E8390E',color:'#fff',fontSize:'10px',fontWeight:800,padding:'4px 10px',borderRadius:'4px',textTransform:'uppercase',letterSpacing:'0.5px'}}>
@@ -652,18 +664,23 @@ function PublicarContent() {
                 </ul>
                 <button
                   onClick={() => setSelectedPlan(plan)}
-                  disabled={blocked || isLoadingVerif}
+                  disabled={planDisabled}
                   style={{
                     width:'100%', padding:'11px',
                     background: isFull ? '#E8390E' : '#1E2340',
                     color:'#fff', border:'none', borderRadius:'4px',
                     fontSize:'13px', fontWeight:800,
-                    cursor: (blocked || isLoadingVerif) ? 'not-allowed' : 'pointer',
+                    cursor: planDisabled ? 'not-allowed' : 'pointer',
                     textTransform:'uppercase',
-                    opacity: (blocked || isLoadingVerif) ? 0.5 : 1,
+                    opacity: planDisabled ? 0.5 : 1,
                   }}>
                   Elegir {plan.name}
                 </button>
+                {freeBlocked && (
+                  <div style={{fontSize:'11px',color:'#666',marginTop:'8px',lineHeight:1.4}}>
+                    Ya tienes un anuncio gratuito activo. Elige Básico o Full, o suspende/elimina el actual.
+                  </div>
+                )}
               </div>
             )
           })}
