@@ -1,8 +1,25 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata = {
-  title: 'Política de Privacidad | MotoPatio',
-  description: 'Política de privacidad y protección de datos personales de MotoPatio, conforme a la LOPDP de Ecuador.',
+export const metadata: Metadata = {
+  title: 'Política de privacidad',
+  description: 'Política de privacidad y protección de datos personales de MotoPatío, conforme a la LOPDP de Ecuador.',
+  alternates: { canonical: 'https://motopatio.com/politica-de-privacidad' },
+  openGraph: {
+    type: 'website',
+    locale: 'es_EC',
+    siteName: 'MotoPatío',
+    url: 'https://motopatio.com/politica-de-privacidad',
+    title: 'Política de privacidad | MotoPatío',
+    description: 'Protección de datos personales conforme a la LOPDP de Ecuador.',
+    images: [{ url: '/og-default.jpg', width: 1200, height: 630, alt: 'MotoPatío — Política de privacidad' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Política de privacidad | MotoPatío',
+    description: 'Protección de datos personales conforme a la LOPDP de Ecuador.',
+    images: ['/og-default.jpg'],
+  },
 }
 
 export default function PoliticaPrivacidadPage() {

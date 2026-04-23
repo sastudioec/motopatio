@@ -1,8 +1,25 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata = {
-  title: 'Política de Reembolsos | MotoPatio',
-  description: 'Política de reembolsos de MotoPatio. Pagos únicos por publicación, sin suscripciones ni cargos recurrentes.',
+export const metadata: Metadata = {
+  title: 'Política de reembolsos',
+  description: 'Política de reembolsos de MotoPatío. Pagos únicos por publicación, sin suscripciones ni cargos recurrentes.',
+  alternates: { canonical: 'https://motopatio.com/politica-de-reembolsos' },
+  openGraph: {
+    type: 'website',
+    locale: 'es_EC',
+    siteName: 'MotoPatío',
+    url: 'https://motopatio.com/politica-de-reembolsos',
+    title: 'Política de reembolsos | MotoPatío',
+    description: 'Pagos únicos por publicación, sin suscripciones ni cargos recurrentes.',
+    images: [{ url: '/og-default.jpg', width: 1200, height: 630, alt: 'MotoPatío — Política de reembolsos' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Política de reembolsos | MotoPatío',
+    description: 'Pagos únicos por publicación. Sin suscripciones.',
+    images: ['/og-default.jpg'],
+  },
 }
 
 export default function PoliticaReembolsosPage() {

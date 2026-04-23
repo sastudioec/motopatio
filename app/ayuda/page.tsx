@@ -1,8 +1,25 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata = {
-  title: 'Centro de Ayuda | MotoPatio',
-  description: 'Preguntas frecuentes sobre MotoPatio: cómo publicar anuncios, planes, pagos, renovaciones, cuenta y más.',
+export const metadata: Metadata = {
+  title: 'Centro de ayuda y preguntas frecuentes',
+  description: 'Preguntas frecuentes sobre MotoPatío: cómo publicar anuncios, planes, pagos, renovaciones, cuenta y más.',
+  alternates: { canonical: 'https://motopatio.com/ayuda' },
+  openGraph: {
+    type: 'website',
+    locale: 'es_EC',
+    siteName: 'MotoPatío',
+    url: 'https://motopatio.com/ayuda',
+    title: 'Centro de ayuda | MotoPatío',
+    description: 'Preguntas frecuentes: cómo publicar, planes, pagos, renovaciones y cuenta.',
+    images: [{ url: '/og-default.jpg', width: 1200, height: 630, alt: 'MotoPatío — Centro de ayuda' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Centro de ayuda | MotoPatío',
+    description: 'Preguntas frecuentes sobre MotoPatío.',
+    images: ['/og-default.jpg'],
+  },
 }
 
 const secciones = [
