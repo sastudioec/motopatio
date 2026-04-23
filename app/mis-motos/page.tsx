@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { openCajita } from '@/lib/cajita'
 
 export default function MisMotosPage() {
   const { data: session, status } = useSession()
@@ -13,6 +14,32 @@ export default function MisMotosPage() {
   const [modalMoto, setModalMoto] = useState<any>(null)
   const [procesando, setProcesando] = useState<string | null>(null)
   const [copiado, setCopiado] = useState<string | null>(null)
+  const [destacarLoading, setDestacarLoading] = useState(false)
+  const [destacarError, setDestacarError] = useState<string | null>(null)
+
+  const handleDestacar = async (listingId: string) => {
+    setDestacarError(null)
+    setDestacarLoading(true)
+    try {
+      const res = await fetch('/api/pagos/destacar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setDestacarError(data.error || data.message || 'No se pudo iniciar el pago')
+        setDestacarLoading(false)
+        return
+      }
+      await openCajita(data.cajita, 'pp-button-destacar')
+      // Cajita se encarga del redirect a /api/pagos/confirmar tras el pago.
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error al abrir pasarela'
+      setDestacarError(msg)
+      setDestacarLoading(false)
+    }
+  }
 
   const copiarCodigo = async (code: string) => {
     try {
@@ -214,18 +241,61 @@ export default function MisMotosPage() {
         )}
       </div>
 
-      {modalMoto && (
+      {modalMoto && (() => {
+        const ahora = Date.now()
+        const destacadoActivo =
+          !!modalMoto.destacadoHasta &&
+          new Date(modalMoto.destacadoHasta).getTime() > ahora
+        const listingVigente =
+          modalMoto.estado === 'activo' &&
+          !!modalMoto.expiraEn &&
+          new Date(modalMoto.expiraEn).getTime() > ahora
+        const puedeDestacar = listingVigente && !destacadoActivo
+        const fechaDestacado = destacadoActivo
+          ? new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(modalMoto.destacadoHasta))
+          : null
+        const renderDestacarCard = () => (
+          <div style={{border:'1px solid #e0e0e0',borderRadius:'8px',padding:'16px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
+              <div style={{fontWeight:700,color:'#1E2340'}}>⭐ Destacar moto</div>
+              <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>$7</div>
+            </div>
+            <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>Aparece primero en el catalogo por 7 dias</div>
+            {destacadoActivo ? (
+              <button disabled style={{width:'100%',padding:'10px',background:'#e0e0e0',color:'#888',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor:'not-allowed'}}>
+                Ya destacado hasta {fechaDestacado}
+              </button>
+            ) : !listingVigente ? (
+              <button disabled style={{width:'100%',padding:'10px',background:'#e0e0e0',color:'#888',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor:'not-allowed'}}>
+                Renueva el plan para destacar
+              </button>
+            ) : (
+              <button
+                onClick={() => handleDestacar(modalMoto.id)}
+                disabled={destacarLoading}
+                style={{width:'100%',padding:'10px',background:'#1E2340',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: destacarLoading ? 'wait' : 'pointer',opacity: destacarLoading ? 0.7 : 1}}>
+                {destacarLoading ? 'Abriendo pasarela...' : 'Pagar $7'}
+              </button>
+            )}
+          </div>
+        )
+        return (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:'20px'}}>
           <div style={{background:'#fff',borderRadius:'12px',padding:'32px',maxWidth:'480px',width:'100%'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
               <div style={{fontFamily:'Poppins,sans-serif',fontSize:'18px',fontWeight:900,color:'#1E2340'}}>
                 {modalMoto.planTipo === 'gratis' ? 'Mejorar plan' : 'Promocionar moto'}
               </div>
-              <button onClick={() => setModalMoto(null)} style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#888'}}>✕</button>
+              <button onClick={() => { setModalMoto(null); setDestacarError(null); setDestacarLoading(false) }} style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#888'}}>✕</button>
             </div>
             <div style={{fontSize:'13px',color:'#888',marginBottom:'20px'}}>
               <strong style={{color:'#1E2340'}}>{modalMoto.marca} {modalMoto.modelo}</strong> — Plan actual: <strong>{modalMoto.planTipo || 'gratis'}</strong>
             </div>
+            {destacarError && (
+              <div style={{background:'#fef2f2',border:'1px solid #fecaca',color:'#b91c1c',padding:'10px 12px',borderRadius:'6px',fontSize:'13px',marginBottom:'14px'}}>
+                {destacarError}
+              </div>
+            )}
             <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
               {(modalMoto.planTipo === 'gratis' || !modalMoto.planTipo) && (
                 <>
@@ -254,16 +324,7 @@ export default function MisMotosPage() {
               )}
               {modalMoto.planTipo === 'basico' && (
                 <>
-                  <div style={{border:'1px solid #e0e0e0',borderRadius:'8px',padding:'16px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
-                      <div style={{fontWeight:700,color:'#1E2340'}}>⭐ Destacar moto</div>
-                      <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>$7</div>
-                    </div>
-                    <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>Aparece primero en el catalogo por 7 dias</div>
-                    <button style={{width:'100%',padding:'10px',background:'#1E2340',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor:'pointer'}}>
-                      Pagar $7 — Proximamente
-                    </button>
-                  </div>
+                  {renderDestacarCard()}
                   <div style={{border:'2px solid #E8390E',borderRadius:'8px',padding:'16px',position:'relative'}}>
                     <div style={{position:'absolute',top:'-10px',left:'16px',background:'#E8390E',color:'white',fontSize:'10px',fontWeight:800,padding:'2px 10px',borderRadius:'10px'}}>MEJOR VALOR</div>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
@@ -277,10 +338,12 @@ export default function MisMotosPage() {
                   </div>
                 </>
               )}
+              {modalMoto.planTipo === 'full' && renderDestacarCard()}
             </div>
           </div>
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

@@ -14,6 +14,27 @@ function redirectTo(path: string): NextResponse {
   return NextResponse.redirect(getBaseUrl() + path)
 }
 
+async function buildOkRedirect(
+  paymentId: string,
+  concept: string,
+  listingId: string | null
+): Promise<NextResponse> {
+  let suffix = listingId ? '&listingId=' + listingId : ''
+  if (concept === 'featured') {
+    suffix += '&type=featured'
+    if (listingId) {
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+        select: { destacadoHasta: true },
+      })
+      if (listing?.destacadoHasta) {
+        suffix += '&destacadoHasta=' + encodeURIComponent(listing.destacadoHasta.toISOString())
+      }
+    }
+  }
+  return redirectTo('/pago/resultado?status=ok&paymentId=' + paymentId + suffix)
+}
+
 /**
  * PayPhone redirige aqui (GET) tras el pago con:
  *   ?id=<number>&clientTransactionId=<string>
@@ -44,8 +65,7 @@ export async function GET(req: NextRequest) {
       result.status === 'activated' || result.status === 'already_active'
         ? result.listingId
         : null
-    const suffix = listingId ? '&listingId=' + listingId : ''
-    return redirectTo('/pago/resultado?status=ok&paymentId=' + payment.id + suffix)
+    return buildOkRedirect(payment.id, payment.concept, listingId)
   }
 
   // Confirmar contra PayPhone
@@ -107,6 +127,5 @@ export async function GET(req: NextRequest) {
     result.status === 'activated' || result.status === 'already_active'
       ? result.listingId
       : null
-  const suffix = listingId ? '&listingId=' + listingId : ''
-  return redirectTo('/pago/resultado?status=ok&paymentId=' + payment.id + suffix)
+  return buildOkRedirect(payment.id, payment.concept, listingId)
 }

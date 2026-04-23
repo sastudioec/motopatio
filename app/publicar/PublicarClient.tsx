@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { PROVINCIAS_ECUADOR, getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 import { getPlanCopy, getPlanCtaLabel } from '@/lib/plan-copy'
+import { openCajita, type CajitaConfig } from '@/lib/cajita'
 
 type PlanCatalog = {
   id: string
@@ -17,26 +18,6 @@ type PlanCatalog = {
   sortOrder: number
 }
 
-type CajitaConfig = {
-  token: string
-  storeId: string
-  clientTransactionId: string
-  amount: number
-  amountWithoutTax: number
-  amountWithTax: number
-  tax: number
-  service: number
-  tip: number
-  currency: string
-  reference: string
-  lang: string
-  defaultMethod: string
-  cssUrl: string
-  jsUrl: string
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare global { interface Window { PPaymentButtonBox?: any } }
 
 function PublicarContent() {
   const { data: session, status } = useSession()
@@ -385,72 +366,6 @@ function PublicarContent() {
     setResending(false)
   }
 
-  // Carga dinamica del CSS/JS de la Cajita (idempotente)
-  const loadCajitaAssets = (cssUrl: string, jsUrl: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // CSS
-      if (!document.querySelector('link[data-payphone="css"]')) {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = cssUrl
-        link.dataset.payphone = 'css'
-        document.head.appendChild(link)
-      }
-      // JS
-      if (window.PPaymentButtonBox) {
-        resolve()
-        return
-      }
-      let script = document.querySelector('script[data-payphone="js"]') as HTMLScriptElement | null
-      if (!script) {
-        script = document.createElement('script')
-        script.type = 'module'
-        script.src = jsUrl
-        script.dataset.payphone = 'js'
-        script.onload = () => resolve()
-        script.onerror = () => reject(new Error('No se pudo cargar el script de PayPhone'))
-        document.head.appendChild(script)
-      } else {
-        script.addEventListener('load', () => resolve())
-        script.addEventListener('error', () => reject(new Error('No se pudo cargar el script de PayPhone')))
-      }
-    })
-  }
-
-  const openCajita = async (cfg: CajitaConfig) => {
-    await loadCajitaAssets(cfg.cssUrl, cfg.jsUrl)
-    // Esperar hasta 3 segundos a que PPaymentButtonBox este disponible
-    const start = Date.now()
-    while (!window.PPaymentButtonBox && Date.now() - start < 3000) {
-      await new Promise(r => setTimeout(r, 100))
-    }
-    if (!window.PPaymentButtonBox) {
-      throw new Error('PayPhone no se cargó. Intenta recargar la página.')
-    }
-    // Asegurar contenedor
-    let container = document.getElementById('pp-button')
-    if (!container) {
-      container = document.createElement('div')
-      container.id = 'pp-button'
-      document.body.appendChild(container)
-    }
-    const ppb = new window.PPaymentButtonBox({
-      token: cfg.token,
-      clientTransactionId: cfg.clientTransactionId,
-      amount: cfg.amount,
-      amountWithoutTax: cfg.amountWithoutTax,
-      amountWithTax: cfg.amountWithTax,
-      tax: cfg.tax,
-      service: cfg.service,
-      tip: cfg.tip,
-      currency: cfg.currency,
-      storeId: cfg.storeId,
-      reference: cfg.reference,
-      lang: cfg.lang,
-      defaultMethod: cfg.defaultMethod,
-    })
-    ppb.render('pp-button')
-  }
 
   const handleSaveDraft = async () => {
     setPublishError(null)

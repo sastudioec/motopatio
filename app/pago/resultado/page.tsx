@@ -10,6 +10,9 @@ function ResultadoContent() {
   const reason = params.get('reason')
   const paymentId = params.get('paymentId')
   const listingId = params.get('listingId')
+  const type = params.get('type')
+  const destacadoHasta = params.get('destacadoHasta')
+  const isFeatured = type === 'featured'
 
   const [countdown, setCountdown] = useState(5)
 
@@ -71,14 +74,22 @@ function ResultadoContent() {
   }
 
   if (status === 'ok') {
+    const fecha = destacadoHasta
+      ? new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(destacadoHasta))
+      : null
+    const okTitle = isFeatured ? '¡Destacado activado!' : '¡Pago aprobado!'
+    const okIcon = isFeatured ? '⭐' : '✅'
+    const okMsg = isFeatured
+      ? (fecha
+          ? `Tu anuncio estará destacado hasta el ${fecha}. Te enviamos un email de confirmación.`
+          : 'Tu anuncio ya está destacado. Te enviamos un email de confirmación.')
+      : 'Tu publicación ya está activa en MotoPatio. Te enviamos un email de confirmación.'
     return (
       <div style={{ minHeight: '100vh', background: '#f4f4f4', padding: '20px' }}>
         <div style={box}>
-          <div style={{ fontSize: '56px', marginBottom: '8px' }}>✅</div>
-          <div style={{ ...title, color: '#16a34a' }}>¡Pago aprobado!</div>
-          <div style={msg}>
-            Tu publicación ya está activa en MotoPatio. Te enviamos un email de confirmación.
-          </div>
+          <div style={{ fontSize: '56px', marginBottom: '8px' }}>{okIcon}</div>
+          <div style={{ ...title, color: '#16a34a' }}>{okTitle}</div>
+          <div style={msg}>{okMsg}</div>
           <div style={{ ...msg, fontSize: '12px', color: '#888' }}>
             Serás redirigido a tus motos en {countdown} segundos...
           </div>
