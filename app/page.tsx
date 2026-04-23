@@ -57,23 +57,40 @@ export const metadata: Metadata = {
   },
 }
 
-async function getListings() {
+async function getDestacadas() {
   try {
-    const listings = await prisma.listing.findMany({
-      where: { estado: 'activo' },
-      orderBy: [{ destacado: 'desc' }, { createdAt: 'desc' }],
-      take: 12,
+    return await prisma.listing.findMany({
+      where: {
+        estado: 'activo',
+        destacadoHasta: { gt: new Date() },
+      },
+      orderBy: { destacadoHasta: 'desc' },
+      take: 8,
     })
-    return listings
+  } catch {
+    return []
+  }
+}
+
+async function getRecientes(excludeIds: string[]) {
+  try {
+    return await prisma.listing.findMany({
+      where: {
+        estado: 'activo',
+        id: { notIn: excludeIds },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    })
   } catch {
     return []
   }
 }
 
 export default async function Home() {
-  const listings = await getListings()
-  const destacadas = listings.filter(l => l.destacado)
-  const recientes = listings.filter(l => !l.destacado)
+  const destacadas = await getDestacadas()
+  const recientes = await getRecientes(destacadas.map(d => d.id))
+  const listings = [...destacadas, ...recientes]
 
   return (
     <main>
@@ -84,13 +101,13 @@ export default async function Home() {
           <div style={{padding:'24px 20px',maxWidth:'1200px',margin:'0 auto'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
               <div style={{display:'flex',alignItems:'center'}}>
-                <div style={{background:'#E8390E',color:'white',fontSize:'13px',fontWeight:800,textTransform:'uppercase',padding:'7px 18px 7px 14px'}}>Clasificado Destacado</div>
+                <div style={{background:'#E8390E',color:'white',fontSize:'13px',fontWeight:800,textTransform:'uppercase',padding:'7px 18px 7px 14px'}}>Motos Destacadas</div>
                 <div style={{flex:1,height:'2px',background:'#e0e0e0',width:'40px'}}></div>
               </div>
               <Link href="/motos" style={{fontSize:'11px',color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Mostrar todo</Link>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,240px))',gap:'12px',justifyContent:'center'}}>
-              {destacadas.slice(0,4).map(l => <MotoCard key={l.id} l={l} />)}
+              {destacadas.map(l => <MotoCard key={l.id} l={l} />)}
             </div>
           </div>
         )}
@@ -103,13 +120,17 @@ export default async function Home() {
             </div>
             <Link href="/motos" style={{fontSize:'11px',color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Ver todas</Link>
           </div>
-          {recientes.length === 0 && listings.length === 0 ? (
+          {listings.length === 0 ? (
             <div style={{textAlign:'center',padding:'40px',color:'#888',fontSize:'14px'}}>
               Aún no hay motos publicadas. <Link href="/publicar" style={{color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Sé el primero en publicar</Link>
             </div>
+          ) : recientes.length === 0 ? (
+            <div style={{textAlign:'center',padding:'24px',color:'#888',fontSize:'13px'}}>
+              Por ahora todas las motos activas están destacadas. <Link href="/motos" style={{color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Ver todas</Link>
+            </div>
           ) : (
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,240px))',gap:'12px',justifyContent:'center'}}>
-              {(recientes.length > 0 ? recientes : listings).slice(0,4).map(l => <MotoCard key={l.id} l={l} />)}
+              {recientes.slice(0,4).map(l => <MotoCard key={l.id} l={l} />)}
             </div>
           )}
         </div>
