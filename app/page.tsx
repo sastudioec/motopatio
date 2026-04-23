@@ -107,8 +107,15 @@ export default async function Home() {
               <Link href="/motos" style={{fontSize:'11px',color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Mostrar todo</Link>
             </div>
             <div className="home-motos-grid">
-              {destacadas.map(l => <MotoCard key={l.id} l={l} />)}
+              {destacadas.slice(0, 4).map(l => <MotoCard key={l.id} l={l} />)}
             </div>
+            {destacadas.length > 4 && (
+              <div style={{textAlign:'center',marginTop:'18px'}}>
+                <Link href="/motos" style={{display:'inline-block',background:'#E8390E',color:'#fff',padding:'11px 28px',fontSize:'12px',fontWeight:800,borderRadius:'4px',textDecoration:'none',textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                  Ver todas las destacadas
+                </Link>
+              </div>
+            )}
           </div>
         )}
         <div style={{borderTop:'1px solid #e8e8e8'}}></div>
@@ -129,9 +136,18 @@ export default async function Home() {
               Por ahora todas las motos activas están destacadas. <Link href="/motos" style={{color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Ver todas</Link>
             </div>
           ) : (
-            <div className="home-motos-grid">
-              {recientes.slice(0,4).map(l => <MotoCard key={l.id} l={l} />)}
-            </div>
+            <>
+              <div className="home-motos-grid">
+                {recientes.slice(0, 4).map(l => <MotoCard key={l.id} l={l} />)}
+              </div>
+              {recientes.length > 4 && (
+                <div style={{textAlign:'center',marginTop:'18px'}}>
+                  <Link href="/motos" style={{display:'inline-block',background:'#E8390E',color:'#fff',padding:'11px 28px',fontSize:'12px',fontWeight:800,borderRadius:'4px',textDecoration:'none',textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                    Ver todas las motos
+                  </Link>
+                </div>
+              )}
+            </>
           )}
         </div>
         <div style={{maxWidth:'1200px',margin:'0 auto',padding:'8px 20px'}}>

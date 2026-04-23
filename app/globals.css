@@ -32,13 +32,29 @@ img {
 }
 
 .home-motos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
+  justify-content: center;
+  max-width: 1200px;
+  margin: 0 auto;
 }
-@media (min-width: 769px) {
-  .home-motos-grid {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 280px));
-    justify-content: center;
+.home-motos-grid > * {
+  flex: 0 0 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+@media (min-width: 600px) {
+  .home-motos-grid > * {
+    flex: 0 0 calc(50% - 7px);
+    max-width: 280px;
+    min-width: 0;
+  }
+}
+@media (min-width: 900px) {
+  .home-motos-grid > * {
+    flex: 0 0 260px;
+    max-width: 280px;
+    min-width: 0;
   }
 }

@@ -12,6 +12,8 @@ interface Props {
   /** Si true, ocupa el 100% del padre (absolute inset:0) sin borderRadius
    *  ni aspectRatio propio. Util para usarlo como fondo full-bleed. */
   fill?: boolean
+  /** object-fit del Image (solo aplica con fill=true). Default 'cover'. */
+  objectFit?: 'cover' | 'contain'
 }
 
 export default async function Banner({
@@ -20,6 +22,7 @@ export default async function Banner({
   placeholderText = 'Espacio publicitario disponible',
   style = {},
   fill = false,
+  objectFit = 'cover',
 }: Props) {
   const banner = await pickBanner(position)
 
@@ -66,7 +69,7 @@ export default async function Banner({
       alt={banner.title}
       fill
       sizes="(max-width: 900px) 100vw, 1200px"
-      style={{ objectFit: 'cover' }}
+      style={{ objectFit }}
     />
   )
 
