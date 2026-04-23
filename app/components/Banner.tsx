@@ -9,6 +9,9 @@ interface Props {
   placeholderText?: string
   /** Estilos extras del contenedor */
   style?: React.CSSProperties
+  /** Si true, ocupa el 100% del padre (absolute inset:0) sin borderRadius
+   *  ni aspectRatio propio. Util para usarlo como fondo full-bleed. */
+  fill?: boolean
 }
 
 export default async function Banner({
@@ -16,23 +19,34 @@ export default async function Banner({
   aspectRatio = '4/1',
   placeholderText = 'Espacio publicitario disponible',
   style = {},
+  fill = false,
 }: Props) {
   const banner = await pickBanner(position)
 
-  const containerStyle: React.CSSProperties = {
-    width: '100%',
-    aspectRatio,
-    background: '#2a3050',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    ...style,
-  }
+  const containerStyle: React.CSSProperties = fill
+    ? {
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        ...style,
+      }
+    : {
+        width: '100%',
+        aspectRatio,
+        background: '#2a3050',
+        borderRadius: '4px',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        ...style,
+      }
 
   if (!banner) {
+    if (fill) return null
     return (
       <div style={containerStyle}>
         <span style={{ color: '#5a6280', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '2px' }}>

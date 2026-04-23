@@ -95,7 +95,7 @@ export default async function Home() {
   return (
     <main>
       
-      <Hero bannerSlot={<Banner position="hero" aspectRatio="4/1" />} />
+      <Hero bannerSlot={<Banner position="hero" fill />} />
       <div style={{background:'#f4f4f4'}}>
         {destacadas.length > 0 && (
           <div style={{padding:'24px 20px',maxWidth:'1200px',margin:'0 auto'}}>
@@ -106,7 +106,7 @@ export default async function Home() {
               </div>
               <Link href="/motos" style={{fontSize:'11px',color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Mostrar todo</Link>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,240px))',gap:'12px',justifyContent:'center'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px'}}>
               {destacadas.map(l => <MotoCard key={l.id} l={l} />)}
             </div>
           </div>
@@ -129,7 +129,7 @@ export default async function Home() {
               Por ahora todas las motos activas están destacadas. <Link href="/motos" style={{color:'#E8390E',fontWeight:700,textDecoration:'none'}}>Ver todas</Link>
             </div>
           ) : (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,240px))',gap:'12px',justifyContent:'center'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'14px'}}>
               {recientes.slice(0,4).map(l => <MotoCard key={l.id} l={l} />)}
             </div>
           )}

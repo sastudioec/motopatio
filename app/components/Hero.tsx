@@ -31,10 +31,10 @@ export default function Hero({ bannerSlot }: Props) {
   const selectStyle = {
     flex: 1,
     minWidth: 0,
-    background: '#252d4a',
+    background: 'rgba(30, 35, 64, 0.92)',
     border: 'none',
-    borderRight: '1px solid #333d5e',
-    color: '#ccc',
+    borderRight: '1px solid rgba(255,255,255,0.15)',
+    color: '#fff',
     padding: isMobile ? '11px 6px' : '13px 10px',
     fontSize: isMobile ? '11px' : '12px',
     fontFamily: 'Montserrat, sans-serif',
@@ -45,37 +45,45 @@ export default function Hero({ bannerSlot }: Props) {
   }
 
   return (
-    <div style={{background:'#1E2340', padding: isMobile ? '24px 12px' : '32px 24px'}}>
-      <div style={{maxWidth:'1200px', margin:'0 auto'}}>
-        <h1 style={{
-          fontFamily: 'Poppins, sans-serif',
-          fontSize: isMobile ? '22px' : '30px',
-          fontWeight: 900,
-          color: '#fff',
-          textAlign: 'center',
-          lineHeight: 1.15,
-          margin: 0,
-          marginBottom: isMobile ? '6px' : '8px',
-        }}>
-          Motos usadas y nuevas en Ecuador
-        </h1>
-        <p style={{
-          fontSize: isMobile ? '12px' : '14px',
-          color: '#a8b0cc',
-          textAlign: 'center',
-          lineHeight: 1.5,
+    <div
+      style={{
+        position: 'relative',
+        background: '#1E2340',
+        overflow: 'hidden',
+        minHeight: isMobile ? '260px' : '360px',
+      }}
+    >
+      {bannerSlot}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          maxWidth: '1200px',
           margin: '0 auto',
-          marginBottom: isMobile ? '18px' : '22px',
-          maxWidth: '640px',
-        }}>
+          padding: isMobile ? '24px 12px' : '40px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
+          minHeight: isMobile ? '260px' : '360px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <h1 className="sr-only">Motos usadas y nuevas en Ecuador</h1>
+        <p className="sr-only">
           Compra, vende y publica motos en Quito, Guayaquil, Cuenca y todo el país. Shineray, Honda, Yamaha, Bajaj, Suzuki y más de 20 marcas.
         </p>
-        {bannerSlot && (
-          <div style={{marginBottom: isMobile ? '20px' : '28px'}}>
-            {bannerSlot}
-          </div>
-        )}
-        <div style={{display:'flex', maxWidth:'680px', margin:'0 auto', border:'2px solid #E8390E', borderRadius:'4px', overflow:'hidden'}}>
+        <div
+          style={{
+            display: 'flex',
+            maxWidth: '680px',
+            margin: '0 auto',
+            width: '100%',
+            border: '2px solid #E8390E',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+          }}
+        >
           <select value={marca} onChange={e => setMarca(e.target.value)} style={selectStyle}>
             <option value="">Marca</option>
             <option>Yamaha</option><option>Honda</option><option>Suzuki</option>
@@ -92,7 +100,23 @@ export default function Hero({ bannerSlot }: Props) {
             <option>Quito</option><option>Guayaquil</option><option>Cuenca</option>
             <option>Ambato</option><option>Loja</option><option>Ibarra</option>
           </select>
-          <button onClick={handleSearch} style={{background:'#E8390E', color:'white', border:'none', padding: isMobile ? '11px 14px' : '13px 28px', fontFamily:'Montserrat, sans-serif', fontSize: isMobile ? '11px' : '13px', fontWeight:800, cursor:'pointer', textTransform:'uppercase', letterSpacing: isMobile ? '0' : '1px', whiteSpace:'nowrap', flexShrink:0}}>
+          <button
+            onClick={handleSearch}
+            style={{
+              background: '#E8390E',
+              color: 'white',
+              border: 'none',
+              padding: isMobile ? '11px 14px' : '13px 28px',
+              fontFamily: 'Montserrat, sans-serif',
+              fontSize: isMobile ? '11px' : '13px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              letterSpacing: isMobile ? '0' : '1px',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
             Buscar
           </button>
         </div>
