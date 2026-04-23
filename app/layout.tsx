@@ -50,10 +50,38 @@ export const metadata: Metadata = {
   },
 }
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'MotoPatío',
+  alternateName: 'MotoPatio',
+  url: 'https://motopatio.com',
+  logo: 'https://motopatio.com/motopatio-logo.png',
+  description:
+    'Marketplace de motos usadas y nuevas en Ecuador. Compra, vende y publica tu moto en Quito, Guayaquil, Cuenca y todo el país.',
+  areaServed: { '@type': 'Country', name: 'Ecuador' },
+  sameAs: [
+    'https://www.instagram.com/motopatiolat',
+    'https://www.facebook.com/motopatiolat',
+    'https://www.tiktok.com/@motopatiolat',
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: 'info@motopatio.com',
+    availableLanguage: ['Spanish'],
+    areaServed: 'EC',
+  },
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <Providers>
           <Navbar />
           {children}

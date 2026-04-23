@@ -47,6 +47,29 @@ export default function Hero({ bannerSlot }: Props) {
   return (
     <div style={{background:'#1E2340', padding: isMobile ? '24px 12px' : '32px 24px'}}>
       <div style={{maxWidth:'1200px', margin:'0 auto'}}>
+        <h1 style={{
+          fontFamily: 'Poppins, sans-serif',
+          fontSize: isMobile ? '22px' : '30px',
+          fontWeight: 900,
+          color: '#fff',
+          textAlign: 'center',
+          lineHeight: 1.15,
+          margin: 0,
+          marginBottom: isMobile ? '6px' : '8px',
+        }}>
+          Motos usadas y nuevas en Ecuador
+        </h1>
+        <p style={{
+          fontSize: isMobile ? '12px' : '14px',
+          color: '#a8b0cc',
+          textAlign: 'center',
+          lineHeight: 1.5,
+          margin: '0 auto',
+          marginBottom: isMobile ? '18px' : '22px',
+          maxWidth: '640px',
+        }}>
+          Compra, vende y publica motos en Quito, Guayaquil, Cuenca y todo el país. Shineray, Honda, Yamaha, Bajaj, Suzuki y más de 20 marcas.
+        </p>
         {bannerSlot && (
           <div style={{marginBottom: isMobile ? '20px' : '28px'}}>
             {bannerSlot}
