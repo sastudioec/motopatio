@@ -315,6 +315,12 @@ function PublicarContent() {
       alert('Maximo ' + maxFotos + ' fotos con el plan ' + (selectedPlan?.name || ''))
       return
     }
+    const tooBig = Array.from(files).filter(f => f.size > 10 * 1024 * 1024).map(f => f.name)
+    if (tooBig.length > 0) {
+      alert('Estas fotos superan los 10MB y no se subiran. Reduce su tamano e intenta de nuevo:\n' + tooBig.join(', '))
+      ev.target.value = ''
+      return
+    }
     setUploading(true)
     let ok = 0, fail = 0
     const fallidas: string[] = []

@@ -96,26 +96,40 @@ export default function ProfilePage() {
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const input = e.target
+    const file = input.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { showMsg('err', 'La imagen no puede superar 5MB'); return }
+    if (file.size > 10 * 1024 * 1024) {
+      showMsg('err', 'La foto supera los 10MB. Reduce el tamaño e intenta de nuevo.')
+      input.value = ''
+      return
+    }
     setUploadingAvatar(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (data.url) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'HTTP ' + res.status)
+      }
+      const data = await res.json().catch(() => ({}))
+      if (!data.url) throw new Error('Respuesta sin URL')
       setAvatar(data.url)
-      await fetch('/api/user/profile', {
+      const saveRes = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ avatar: data.url }),
       })
+      if (!saveRes.ok) throw new Error('No se pudo guardar el perfil')
       showMsg('ok', 'Foto actualizada')
-    } else {
-      showMsg('err', 'Error al subir la foto')
+    } catch (err: any) {
+      console.error('Avatar upload failed', err)
+      showMsg('err', 'Error al subir la foto. Intenta de nuevo.')
+    } finally {
+      setUploadingAvatar(false)
+      input.value = ''
     }
-    setUploadingAvatar(false)
   }
 
   const handleChangePassword = async () => {
