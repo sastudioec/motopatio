@@ -118,7 +118,16 @@ export default async function Home() {
             )}
           </div>
         )}
-        <div style={{borderTop:'1px solid #e8e8e8'}}></div>
+        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'12px 20px 4px'}}>
+          <div style={{height:'2px',background:'#E8390E',opacity:0.5,borderRadius:'2px'}}></div>
+        </div>
+        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'16px 20px 8px',display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))',gap:'16px'}}>
+          <Banner position="mid_left" aspectRatio="4/1" />
+          <Banner position="mid_right" aspectRatio="4/1" />
+        </div>
+        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'4px 20px 12px'}}>
+          <div style={{height:'2px',background:'#E8390E',opacity:0.5,borderRadius:'2px'}}></div>
+        </div>
         <div style={{padding:'24px 20px',maxWidth:'1200px',margin:'0 auto'}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
             <div style={{display:'flex',alignItems:'center'}}>
@@ -149,13 +158,6 @@ export default async function Home() {
               )}
             </>
           )}
-        </div>
-        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'8px 20px'}}>
-          <div style={{height:'2px',background:'#E8390E',opacity:0.5,borderRadius:'2px'}}></div>
-        </div>
-        <div style={{maxWidth:'1200px',margin:'0 auto',padding:'24px 20px',display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))',gap:'16px'}}>
-          <Banner position="mid_left" aspectRatio="4/1" />
-          <Banner position="mid_right" aspectRatio="4/1" />
         </div>
         <div style={{background:'#1E2340',padding:'36px 24px',textAlign:'center'}}>
           <h2 style={{fontSize:'34px',fontWeight:900,color:'#fff',marginBottom:'6px'}}>Vende tu moto con nosotros</h2>

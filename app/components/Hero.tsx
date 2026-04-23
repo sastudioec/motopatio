@@ -31,10 +31,10 @@ export default function Hero({ bannerSlot }: Props) {
   const selectStyle = {
     flex: 1,
     minWidth: 0,
-    background: '#252d4a',
+    background: 'rgba(30, 35, 64, 0.85)',
     border: 'none',
-    borderRight: '1px solid #333d5e',
-    color: '#ccc',
+    borderRight: '1px solid rgba(255,255,255,0.15)',
+    color: '#fff',
     padding: isMobile ? '11px 6px' : '13px 10px',
     fontSize: isMobile ? '11px' : '12px',
     fontFamily: 'Montserrat, sans-serif',
@@ -56,6 +56,8 @@ export default function Hero({ bannerSlot }: Props) {
     border: 0,
   }
 
+  const heroHeight = isMobile ? '280px' : '400px'
+
   return (
     <>
       <h1 style={srOnly}>Motos usadas y nuevas en Ecuador</h1>
@@ -68,58 +70,70 @@ export default function Hero({ bannerSlot }: Props) {
           background: '#1E2340',
           overflow: 'hidden',
           width: '100%',
-          aspectRatio: isMobile ? '820/312' : undefined,
-          height: isMobile ? undefined : '320px',
+          height: heroHeight,
         }}
       >
         {bannerSlot}
-      </div>
-      <div style={{ background: '#1E2340', padding: isMobile ? '14px 12px 18px' : '18px 24px 24px' }}>
         <div
           style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: isMobile ? '16px' : '20px',
+            padding: '0 12px',
+            zIndex: 2,
             display: 'flex',
-            maxWidth: '680px',
-            margin: '0 auto',
-            border: '2px solid #E8390E',
-            borderRadius: '4px',
-            overflow: 'hidden',
+            justifyContent: 'center',
           }}
         >
-          <select value={marca} onChange={e => setMarca(e.target.value)} style={selectStyle}>
-            <option value="">Marca</option>
-            <option>Yamaha</option><option>Honda</option><option>Suzuki</option>
-            <option>Kawasaki</option><option>AKT</option><option>Bera</option>
-            <option>TVS</option><option>Shineray</option>
-          </select>
-          <select value={tipo} onChange={e => setTipo(e.target.value)} style={selectStyle}>
-            <option value="">Tipo</option>
-            <option>Urbana</option><option>Naked</option><option>Trail</option>
-            <option>Scooter</option><option>Deportiva</option><option>Crucero</option>
-          </select>
-          <select value={ciudad} onChange={e => setCiudad(e.target.value)} style={selectStyle}>
-            <option value="">Ciudad</option>
-            <option>Quito</option><option>Guayaquil</option><option>Cuenca</option>
-            <option>Ambato</option><option>Loja</option><option>Ibarra</option>
-          </select>
-          <button
-            onClick={handleSearch}
+          <div
             style={{
-              background: '#E8390E',
-              color: 'white',
-              border: 'none',
-              padding: isMobile ? '11px 14px' : '13px 28px',
-              fontFamily: 'Montserrat, sans-serif',
-              fontSize: isMobile ? '11px' : '13px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: isMobile ? '0' : '1px',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
+              display: 'flex',
+              width: '100%',
+              maxWidth: '800px',
+              border: '2px solid #E8390E',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+              backdropFilter: 'blur(4px)',
             }}
           >
-            Buscar
-          </button>
+            <select value={marca} onChange={e => setMarca(e.target.value)} style={selectStyle}>
+              <option value="">Marca</option>
+              <option>Yamaha</option><option>Honda</option><option>Suzuki</option>
+              <option>Kawasaki</option><option>AKT</option><option>Bera</option>
+              <option>TVS</option><option>Shineray</option>
+            </select>
+            <select value={tipo} onChange={e => setTipo(e.target.value)} style={selectStyle}>
+              <option value="">Tipo</option>
+              <option>Urbana</option><option>Naked</option><option>Trail</option>
+              <option>Scooter</option><option>Deportiva</option><option>Crucero</option>
+            </select>
+            <select value={ciudad} onChange={e => setCiudad(e.target.value)} style={selectStyle}>
+              <option value="">Ciudad</option>
+              <option>Quito</option><option>Guayaquil</option><option>Cuenca</option>
+              <option>Ambato</option><option>Loja</option><option>Ibarra</option>
+            </select>
+            <button
+              onClick={handleSearch}
+              style={{
+                background: '#E8390E',
+                color: 'white',
+                border: 'none',
+                padding: isMobile ? '11px 14px' : '13px 28px',
+                fontFamily: 'Montserrat, sans-serif',
+                fontSize: isMobile ? '11px' : '13px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                letterSpacing: isMobile ? '0' : '1px',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              Buscar
+            </button>
+          </div>
         </div>
       </div>
     </>
