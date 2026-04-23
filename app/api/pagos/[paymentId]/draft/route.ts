@@ -24,6 +24,7 @@ export async function GET(
       userId: true,
       status: true,
       planId: true,
+      metadata: true,
       payphoneRawResponse: true,
     },
   })
@@ -44,7 +45,13 @@ export async function GET(
   }
 
   let draft: Record<string, unknown> | null = null
-  if (payment.payphoneRawResponse) {
+  if (payment.metadata && typeof payment.metadata === 'object') {
+    const md = payment.metadata as Record<string, unknown>
+    if (md.listingDraft && typeof md.listingDraft === 'object') {
+      draft = md.listingDraft as Record<string, unknown>
+    }
+  }
+  if (!draft && payment.payphoneRawResponse) {
     try {
       const parsed = JSON.parse(payment.payphoneRawResponse)
       draft = parsed.listingDraft || null

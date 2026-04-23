@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { confirmTransaction } from '@/lib/payphone'
-import { getPlanById, calcExpiresAt, calcFeaturedUntil } from '@/lib/plans'
-import { sendMotoPublicadaEmail } from '@/lib/emails'
-import { buildListingSlug } from '@/lib/slug'
-import { generateListingPublicId } from '@/lib/public-id'
+import { activatePayment } from '@/lib/payments/activate'
 
-/**
- * Retorna la URL base publica del sitio. Evita usar req.url
- * porque detras de proxy puede ser localhost:3000.
- */
 function getBaseUrl(): string {
   const url = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL
   if (!url) return 'https://motopatio.com'
@@ -35,16 +28,23 @@ export async function GET(req: NextRequest) {
 
   const payment = await prisma.payment.findUnique({
     where: { clientTransactionId: clientTxId },
-    include: { user: true, plan: true },
   })
 
   if (!payment) {
     return redirectTo('/pago/resultado?status=error&reason=notfound')
   }
 
-  // Idempotencia: si ya fue aprobado, no lo procesamos de nuevo
+  // Idempotencia: si ya fue aprobado, no reprocesar. activatePayment es
+  // idempotente tambien, asi que en caso de race entre redirect y cron,
+  // el segundo llamador ve already_active.
   if (payment.status === 'approved') {
-    return redirectTo('/pago/resultado?status=ok&paymentId=' + payment.id)
+    const result = await activatePayment(payment.id)
+    const listingId =
+      result.status === 'activated' || result.status === 'already_active'
+        ? result.listingId
+        : null
+    const suffix = listingId ? '&listingId=' + listingId : ''
+    return redirectTo('/pago/resultado?status=ok&paymentId=' + payment.id + suffix)
   }
 
   // Confirmar contra PayPhone
@@ -67,17 +67,14 @@ export async function GET(req: NextRequest) {
 
   const approved = ppResponse.transactionStatus === 'Approved'
   const canceled = ppResponse.transactionStatus === 'Canceled'
+  const newStatus = approved ? 'approved' : canceled ? 'cancelled' : 'rejected'
 
-  // Actualizar Payment con respuesta de PayPhone
   await prisma.payment.update({
     where: { id: payment.id },
     data: {
-      status: approved ? 'approved' : canceled ? 'cancelled' : 'rejected',
+      status: newStatus,
       payphoneTransactionId: String(ppResponse.transactionId || id),
-      payphoneRawResponse: JSON.stringify({
-        listingDraft: extractListingDraft(payment.payphoneRawResponse),
-        payphone: ppResponse,
-      }),
+      payphoneRawResponse: JSON.stringify(ppResponse),
       confirmedAt: new Date(),
     },
   })
@@ -85,103 +82,22 @@ export async function GET(req: NextRequest) {
   if (canceled) {
     return redirectTo('/pago/resultado?status=cancelled&paymentId=' + payment.id)
   }
-
   if (!approved) {
     return redirectTo('/pago/resultado?status=rejected&paymentId=' + payment.id)
   }
 
-  // Pago aprobado: crear el listing
-  const draft = extractListingDraft(payment.payphoneRawResponse)
-  if (!draft) {
-    console.error('Pago aprobado pero sin listingDraft. Payment:', payment.id)
-    return redirectTo('/pago/resultado?status=error&reason=nodraft&paymentId=' + payment.id)
-  }
-
-  if (!payment.planId) {
-    console.error('Pago aprobado pero sin planId. Payment:', payment.id)
-    return redirectTo('/pago/resultado?status=error&reason=noplan&paymentId=' + payment.id)
-  }
-
-  const plan = await getPlanById(payment.planId)
-  const now = new Date()
-  const expiraEn = calcExpiresAt(now, plan.durationDays)
-  const destacadoHasta = calcFeaturedUntil(now, plan.featuredDays)
-
-  const publicId = await generateListingPublicId()
-
-  const listing = await prisma.listing.create({
-    data: {
-      user: { connect: { id: payment.userId } },
-      plan: { connect: { id: plan.id } },
-      publicId,
-      marca: draft.marca,
-      modelo: draft.modelo,
-      anio: parseInt(String(draft.anio)) || 0,
-      cilindraje: draft.cilindraje,
-      tipo: draft.tipo,
-      km: parseInt(String(draft.km)) || 0,
-      precio: parseInt(String(draft.precio)) || 0,
-      ciudad: draft.ciudad,
-      provincia: draft.provincia || null,
-      color: draft.color || null,
-      placa: draft.placa || null,
-      descripcion: draft.descripcion || null,
-      fotos: JSON.stringify(draft.fotos || []),
-      estado: 'activo',
-      planTipo: plan.id,
-      publishedAt: now,
-      expiraEn,
-      destacado: destacadoHasta !== null,
-      destacadoHasta,
-    },
-  })
-
-  const slug = buildListingSlug(listing)
-  await prisma.listing.update({ where: { id: listing.id }, data: { slug } })
-
-  await prisma.payment.update({
-    where: { id: payment.id },
-    data: { listingId: listing.id },
-  })
-
-  try {
-    await sendMotoPublicadaEmail(
-      payment.user.email,
-      payment.user.name || 'Usuario',
-      {
-        titulo: draft.marca + ' ' + draft.modelo,
-        slug,
-        publicId,
-        precio: parseInt(String(draft.precio)) || 0,
-      }
+  // Pago aprobado: delegar activacion al helper
+  const result = await activatePayment(payment.id)
+  if (result.status === 'missing_data') {
+    console.error('Pago aprobado pero faltan datos:', payment.id, result.reason)
+    return redirectTo(
+      '/pago/resultado?status=error&reason=' + result.reason + '&paymentId=' + payment.id
     )
-  } catch (e) {
-    console.error('Email error:', e)
   }
-
-  return redirectTo('/pago/resultado?status=ok&paymentId=' + payment.id + '&listingId=' + listing.id)
-}
-
-function extractListingDraft(raw: string | null): {
-  marca: string
-  modelo: string
-  anio: string | number
-  cilindraje: string
-  tipo: string
-  km: string | number
-  precio: string | number
-  ciudad: string
-  provincia?: string
-  color?: string
-  placa?: string
-  descripcion?: string
-  fotos?: string[]
-} | null {
-  if (!raw) return null
-  try {
-    const parsed = JSON.parse(raw)
-    return parsed.listingDraft || null
-  } catch {
-    return null
-  }
+  const listingId =
+    result.status === 'activated' || result.status === 'already_active'
+      ? result.listingId
+      : null
+  const suffix = listingId ? '&listingId=' + listingId : ''
+  return redirectTo('/pago/resultado?status=ok&paymentId=' + payment.id + suffix)
 }
