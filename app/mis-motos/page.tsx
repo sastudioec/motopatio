@@ -18,6 +18,10 @@ function MisMotosContent() {
   const [copiado, setCopiado] = useState<string | null>(null)
   const [destacarLoading, setDestacarLoading] = useState(false)
   const [destacarError, setDestacarError] = useState<string | null>(null)
+  const [destacarOpened, setDestacarOpened] = useState(false)
+  const [mejorarLoading, setMejorarLoading] = useState<string | null>(null)
+  const [mejorarError, setMejorarError] = useState<string | null>(null)
+  const [mejorarOpened, setMejorarOpened] = useState(false)
   const [retryHandled, setRetryHandled] = useState(false)
 
   const handleDestacar = async (listingId: string) => {
@@ -36,11 +40,35 @@ function MisMotosContent() {
         return
       }
       await openCajita(data.cajita, 'pp-button-destacar')
-      // Cajita se encarga del redirect a /api/pagos/confirmar tras el pago.
+      setDestacarOpened(true)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al abrir pasarela'
       setDestacarError(msg)
       setDestacarLoading(false)
+    }
+  }
+
+  const handleMejorar = async (listingId: string, targetPlanId: string) => {
+    setMejorarError(null)
+    setMejorarLoading(targetPlanId)
+    try {
+      const res = await fetch('/api/pagos/mejorar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId, targetPlanId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMejorarError(data.error || 'No se pudo iniciar el pago')
+        setMejorarLoading(null)
+        return
+      }
+      await openCajita(data.cajita, 'pp-button-mejorar')
+      setMejorarOpened(true)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error al abrir pasarela'
+      setMejorarError(msg)
+      setMejorarLoading(null)
     }
   }
 
@@ -68,8 +96,10 @@ function MisMotosContent() {
     }
   }, [session])
 
-  // Reintento de Destacado (?retry=paymentId): busca el Payment featured,
-  // encuentra la moto correspondiente y abre el modal Promocionar moto.
+  // Reintento (?retry=paymentId): cubre Destacar (concept=featured) y
+  // Mejorar plan (concept=plan + isUpgrade). En ambos casos abre el
+  // modal de la moto asociada; el modal muestra Promocionar o Mejorar
+  // segun planTipo.
   useEffect(() => {
     if (!retryPaymentId || retryHandled) return
     if (status !== 'authenticated') return
@@ -80,7 +110,10 @@ function MisMotosContent() {
       .then(r => r.json())
       .then(d => {
         if (cancelled) return
-        if (!d?.ok || d.concept !== 'featured' || !d.listingId) return
+        if (!d?.ok || !d.listingId) return
+        const isFeatured = d.concept === 'featured'
+        const isUpgrade = d.concept === 'plan' && d.isUpgrade === true
+        if (!isFeatured && !isUpgrade) return
         const moto = motos.find(m => m.id === d.listingId)
         if (moto) setModalMoto(moto)
       })
@@ -300,9 +333,9 @@ function MisMotosContent() {
             ) : (
               <button
                 onClick={() => handleDestacar(modalMoto.id)}
-                disabled={destacarLoading}
-                style={{width:'100%',padding:'10px',background:'#1E2340',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: destacarLoading ? 'wait' : 'pointer',opacity: destacarLoading ? 0.7 : 1}}>
-                {destacarLoading ? 'Abriendo pasarela...' : 'Pagar $7'}
+                disabled={destacarLoading || destacarOpened}
+                style={{width:'100%',padding:'10px',background: destacarOpened ? '#8a8a8a' : '#1E2340',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: (destacarLoading || destacarOpened) ? 'not-allowed' : 'pointer',opacity: destacarLoading ? 0.7 : 1}}>
+                {destacarOpened ? 'Paga abajo ↓' : destacarLoading ? 'Abriendo pasarela...' : 'Pagar $7'}
               </button>
             )}
           </div>
@@ -314,14 +347,14 @@ function MisMotosContent() {
               <div style={{fontFamily:'Poppins,sans-serif',fontSize:'18px',fontWeight:900,color:'#1E2340'}}>
                 {modalMoto.planTipo === 'gratis' ? 'Mejorar plan' : 'Promocionar moto'}
               </div>
-              <button onClick={() => { setModalMoto(null); setDestacarError(null); setDestacarLoading(false) }} style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#888'}}>✕</button>
+              <button onClick={() => { setModalMoto(null); setDestacarError(null); setDestacarLoading(false); setDestacarOpened(false); setMejorarError(null); setMejorarLoading(null); setMejorarOpened(false) }} style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#888'}}>✕</button>
             </div>
             <div style={{fontSize:'13px',color:'#888',marginBottom:'20px'}}>
               <strong style={{color:'#1E2340'}}>{modalMoto.marca} {modalMoto.modelo}</strong> — Plan actual: <strong>{modalMoto.planTipo || 'gratis'}</strong>
             </div>
-            {destacarError && (
+            {(destacarError || mejorarError) && (
               <div style={{background:'#fef2f2',border:'1px solid #fecaca',color:'#b91c1c',padding:'10px 12px',borderRadius:'6px',fontSize:'13px',marginBottom:'14px'}}>
-                {destacarError}
+                {destacarError || mejorarError}
               </div>
             )}
             <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
@@ -333,8 +366,11 @@ function MisMotosContent() {
                       <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>$5</div>
                     </div>
                     <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>15 dias activa · Hasta 8 fotos</div>
-                    <button style={{width:'100%',padding:'10px',background:'#1E2340',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor:'pointer'}}>
-                      Pagar $5 — Proximamente
+                    <button
+                      onClick={() => handleMejorar(modalMoto.id, 'basico')}
+                      disabled={mejorarLoading !== null || mejorarOpened}
+                      style={{width:'100%',padding:'10px',background: mejorarOpened ? '#8a8a8a' : '#1E2340',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: (mejorarLoading !== null || mejorarOpened) ? 'not-allowed' : 'pointer',opacity: mejorarLoading === 'basico' ? 0.7 : 1}}>
+                      {mejorarOpened ? 'Paga abajo ↓' : mejorarLoading === 'basico' ? 'Abriendo pasarela...' : 'Pagar $5'}
                     </button>
                   </div>
                   <div style={{border:'2px solid #E8390E',borderRadius:'8px',padding:'16px',position:'relative'}}>
@@ -344,8 +380,11 @@ function MisMotosContent() {
                       <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>$10</div>
                     </div>
                     <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>30 dias activa · Destacado 7 dias incluido</div>
-                    <button style={{width:'100%',padding:'10px',background:'#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor:'pointer'}}>
-                      Pagar $10 — Proximamente
+                    <button
+                      onClick={() => handleMejorar(modalMoto.id, 'full')}
+                      disabled={mejorarLoading !== null || mejorarOpened}
+                      style={{width:'100%',padding:'10px',background: mejorarOpened ? '#8a8a8a' : '#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: (mejorarLoading !== null || mejorarOpened) ? 'not-allowed' : 'pointer',opacity: mejorarLoading === 'full' ? 0.7 : 1}}>
+                      {mejorarOpened ? 'Paga abajo ↓' : mejorarLoading === 'full' ? 'Abriendo pasarela...' : 'Pagar $10'}
                     </button>
                   </div>
                 </>
@@ -360,8 +399,11 @@ function MisMotosContent() {
                       <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>$10</div>
                     </div>
                     <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>30 dias activa · Destacado 7 dias incluido</div>
-                    <button style={{width:'100%',padding:'10px',background:'#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor:'pointer'}}>
-                      Pagar $10 — Proximamente
+                    <button
+                      onClick={() => handleMejorar(modalMoto.id, 'full')}
+                      disabled={mejorarLoading !== null || mejorarOpened}
+                      style={{width:'100%',padding:'10px',background: mejorarOpened ? '#8a8a8a' : '#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: (mejorarLoading !== null || mejorarOpened) ? 'not-allowed' : 'pointer',opacity: mejorarLoading === 'full' ? 0.7 : 1}}>
+                      {mejorarOpened ? 'Paga abajo ↓' : mejorarLoading === 'full' ? 'Abriendo pasarela...' : 'Pagar $10'}
                     </button>
                   </div>
                 </>
@@ -369,6 +411,7 @@ function MisMotosContent() {
               {modalMoto.planTipo === 'full' && renderDestacarCard()}
             </div>
             <div id="pp-button-destacar" style={{marginTop:'16px'}}></div>
+            <div id="pp-button-mejorar" style={{marginTop:'16px'}}></div>
           </div>
         </div>
         )

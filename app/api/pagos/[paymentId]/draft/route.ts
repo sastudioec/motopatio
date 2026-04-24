@@ -62,6 +62,26 @@ export async function GET(
     })
   }
 
+  // Upgrade de plan: metadata.isUpgrade=true, listingId seteado en creacion.
+  const md = payment.metadata as Record<string, unknown> | null
+  if (md && md.isUpgrade === true) {
+    if (!payment.listingId) {
+      return NextResponse.json(
+        { error: 'Pago de upgrade sin listing asociado' },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json({
+      ok: true,
+      paymentId: payment.id,
+      status: payment.status,
+      concept: 'plan',
+      isUpgrade: true,
+      listingId: payment.listingId,
+      targetPlanId: typeof md.targetPlanId === 'string' ? md.targetPlanId : payment.planId,
+    })
+  }
+
   let draft: Record<string, unknown> | null = null
   if (payment.metadata && typeof payment.metadata === 'object') {
     const md = payment.metadata as Record<string, unknown>

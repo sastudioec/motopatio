@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { getPlanById, calcExpiresAt, calcFeaturedUntil } from '@/lib/plans'
-import { sendMotoPublicadaEmail, sendDestacadoActivadoEmail } from '@/lib/emails'
+import { sendMotoPublicadaEmail, sendDestacadoActivadoEmail, sendPlanMejoradoEmail } from '@/lib/emails'
 import { buildListingSlug } from '@/lib/slug'
 import { generateListingPublicId } from '@/lib/public-id'
 
@@ -70,6 +70,10 @@ export async function activatePayment(paymentId: string): Promise<ActivateResult
   }
 
   if (payment.concept === 'plan') {
+    const md = payment.metadata as Record<string, unknown> | null
+    if (md && md.isUpgrade === true) {
+      return activateUpgradePayment(payment)
+    }
     return activatePlanPayment(payment)
   }
   if (payment.concept === 'featured') {
@@ -226,6 +230,92 @@ async function activateFeaturedPayment(
     })
   } catch (e) {
     console.error('[activatePayment] email featured error:', e)
+  }
+
+  return { status: 'activated', listingId: payment.listingId }
+}
+
+/**
+ * Activa un upgrade de plan (Gratis->Basico/Full, Basico->Full). Actualiza
+ * el Listing existente con el plan nuevo; no crea uno nuevo. Mantiene
+ * publishedAt original. Recalcula expiraEn = NOW + durationDays del plan
+ * nuevo. Si target trae featuredDays, destacadoHasta = max(existente, NOW + featuredDays).
+ * Idempotente via activatedAt.
+ */
+async function activateUpgradePayment(
+  payment: Awaited<ReturnType<typeof prisma.payment.findUnique>> & {
+    user: { email: string; name: string | null }
+  }
+): Promise<ActivateResult> {
+  if (!payment) return { status: 'missing_data', listingId: null, reason: 'nolisting' }
+  if (!payment.listingId) {
+    console.error('[activatePayment] upgrade sin listingId. Payment:', payment.id)
+    return { status: 'missing_data', listingId: null, reason: 'nolisting' }
+  }
+  if (!payment.planId) {
+    console.error('[activatePayment] upgrade sin planId. Payment:', payment.id)
+    return { status: 'missing_data', listingId: null, reason: 'noplan' }
+  }
+
+  const targetPlan = await getPlanById(payment.planId)
+  const now = new Date()
+  const newExpiraEn = calcExpiresAt(now, targetPlan.durationDays)
+  const newFeaturedFromTarget = calcFeaturedUntil(now, targetPlan.featuredDays)
+
+  const result = await prisma.$transaction(async (tx) => {
+    const listing = await tx.listing.findUnique({
+      where: { id: payment.listingId! },
+      select: {
+        id: true,
+        marca: true,
+        modelo: true,
+        anio: true,
+        slug: true,
+        publicId: true,
+        destacadoHasta: true,
+      },
+    })
+    if (!listing) throw new Error('Listing no encontrado: ' + payment.listingId)
+
+    // destacadoHasta: max(existente, NOW + featuredDays). Si target no
+    // incluye featured y el listing tenia destacado activo, se conserva.
+    let finalDestacadoHasta: Date | null = listing.destacadoHasta ?? null
+    if (newFeaturedFromTarget) {
+      finalDestacadoHasta =
+        listing.destacadoHasta && listing.destacadoHasta > newFeaturedFromTarget
+          ? listing.destacadoHasta
+          : newFeaturedFromTarget
+    }
+
+    await tx.listing.update({
+      where: { id: payment.listingId! },
+      data: {
+        plan: { connect: { id: targetPlan.id } },
+        planTipo: targetPlan.id,
+        expiraEn: newExpiraEn,
+        destacado: finalDestacadoHasta !== null && finalDestacadoHasta > now,
+        destacadoHasta: finalDestacadoHasta,
+      },
+    })
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: { activatedAt: now },
+    })
+    return { listing, finalDestacadoHasta }
+  })
+
+  try {
+    await sendPlanMejoradoEmail(payment.user.email, payment.user.name || 'Usuario', {
+      titulo: result.listing.marca + ' ' + result.listing.modelo,
+      slug: result.listing.slug || result.listing.id,
+      planName: targetPlan.name,
+      planId: targetPlan.id,
+      durationDays: targetPlan.durationDays,
+      expiraEn: newExpiraEn,
+      featuredUntil: result.finalDestacadoHasta,
+    })
+  } catch (e) {
+    console.error('[activatePayment] email upgrade error:', e)
   }
 
   return { status: 'activated', listingId: payment.listingId }

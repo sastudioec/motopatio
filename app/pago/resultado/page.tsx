@@ -12,7 +12,10 @@ function ResultadoContent() {
   const listingId = params.get('listingId')
   const type = params.get('type')
   const destacadoHasta = params.get('destacadoHasta')
+  const planParam = params.get('plan')
   const isFeatured = type === 'featured'
+  const isUpgrade = type === 'upgrade'
+  const goesToMisMotos = isFeatured || isUpgrade
 
   const [countdown, setCountdown] = useState(5)
 
@@ -77,13 +80,23 @@ function ResultadoContent() {
     const fecha = destacadoHasta
       ? new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(destacadoHasta))
       : null
-    const okTitle = isFeatured ? '¡Destacado activado!' : '¡Pago aprobado!'
-    const okIcon = isFeatured ? '⭐' : '✅'
+    const planLabel =
+      planParam === 'full' ? 'Full' : planParam === 'basico' ? 'Básico' : null
+    const okTitle = isFeatured
+      ? '¡Destacado activado!'
+      : isUpgrade
+        ? '¡Plan mejorado!'
+        : '¡Pago aprobado!'
+    const okIcon = isFeatured ? '⭐' : isUpgrade ? '🚀' : '✅'
     const okMsg = isFeatured
       ? (fecha
           ? `Tu anuncio estará destacado hasta el ${fecha}. Te enviamos un email de confirmación.`
           : 'Tu anuncio ya está destacado. Te enviamos un email de confirmación.')
-      : 'Tu publicación ya está activa en MotoPatio. Te enviamos un email de confirmación.'
+      : isUpgrade
+        ? (planLabel
+            ? `Tu anuncio ahora es Plan ${planLabel}. El conteo arranca desde hoy. Te enviamos un email de confirmación.`
+            : 'Tu plan fue mejorado. El conteo arranca desde hoy. Te enviamos un email de confirmación.')
+        : 'Tu publicación ya está activa en MotoPatio. Te enviamos un email de confirmación.'
     return (
       <div style={{ minHeight: '100vh', background: '#f4f4f4', padding: '20px' }}>
         <div style={box}>
@@ -109,7 +122,7 @@ function ResultadoContent() {
           <div style={msg}>
             Tu banco rechazó la transacción. No se realizó ningún cargo. Puedes intentar nuevamente con otra tarjeta.
           </div>
-          <Link href={paymentId ? ((isFeatured ? "/mis-motos?retry=" : "/publicar?retry=") + paymentId) : (isFeatured ? "/mis-motos" : "/publicar")} style={btnPrimary}>Intentar de nuevo</Link>
+          <Link href={paymentId ? ((goesToMisMotos ? "/mis-motos?retry=" : "/publicar?retry=") + paymentId) : (goesToMisMotos ? "/mis-motos" : "/publicar")} style={btnPrimary}>Intentar de nuevo</Link>
           <Link href="/contacto" style={btnSecondary}>Contactar soporte</Link>
         </div>
       </div>
@@ -125,7 +138,7 @@ function ResultadoContent() {
           <div style={msg}>
             Cancelaste el pago antes de completarlo. No se realizó ningún cargo en tu cuenta. Puedes intentar nuevamente cuando quieras.
           </div>
-          <Link href={paymentId ? ((isFeatured ? "/mis-motos?retry=" : "/publicar?retry=") + paymentId) : (isFeatured ? "/mis-motos" : "/publicar")} style={btnPrimary}>Intentar de nuevo</Link>
+          <Link href={paymentId ? ((goesToMisMotos ? "/mis-motos?retry=" : "/publicar?retry=") + paymentId) : (goesToMisMotos ? "/mis-motos" : "/publicar")} style={btnPrimary}>Intentar de nuevo</Link>
           <Link href="/" style={btnSecondary}>Ir al inicio</Link>
         </div>
       </div>

@@ -14,17 +14,29 @@ function redirectTo(path: string): NextResponse {
   return NextResponse.redirect(getBaseUrl() + path)
 }
 
-function typeSuffix(concept: string | undefined): string {
-  return concept === 'featured' ? '&type=featured' : ''
+type PaymentForType = { concept: string; metadata: unknown }
+
+function resolveType(payment: PaymentForType): 'plan' | 'featured' | 'upgrade' {
+  if (payment.concept === 'featured') return 'featured'
+  if (payment.concept === 'plan') {
+    const md = payment.metadata as Record<string, unknown> | null
+    if (md && md.isUpgrade === true) return 'upgrade'
+  }
+  return 'plan'
+}
+
+function typeSuffix(payment: PaymentForType): string {
+  const t = resolveType(payment)
+  return t === 'plan' ? '' : '&type=' + t
 }
 
 async function buildOkRedirect(
-  paymentId: string,
-  concept: string,
+  payment: PaymentForType & { id: string },
   listingId: string | null
 ): Promise<NextResponse> {
   let suffix = listingId ? '&listingId=' + listingId : ''
-  if (concept === 'featured') {
+  const t = resolveType(payment)
+  if (t === 'featured') {
     suffix += '&type=featured'
     if (listingId) {
       const listing = await prisma.listing.findUnique({
@@ -35,8 +47,19 @@ async function buildOkRedirect(
         suffix += '&destacadoHasta=' + encodeURIComponent(listing.destacadoHasta.toISOString())
       }
     }
+  } else if (t === 'upgrade') {
+    suffix += '&type=upgrade'
+    if (listingId) {
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+        select: { planTipo: true },
+      })
+      if (listing?.planTipo) {
+        suffix += '&plan=' + encodeURIComponent(listing.planTipo)
+      }
+    }
   }
-  return redirectTo('/pago/resultado?status=ok&paymentId=' + paymentId + suffix)
+  return redirectTo('/pago/resultado?status=ok&paymentId=' + payment.id + suffix)
 }
 
 /**
@@ -69,7 +92,7 @@ export async function GET(req: NextRequest) {
       result.status === 'activated' || result.status === 'already_active'
         ? result.listingId
         : null
-    return buildOkRedirect(payment.id, payment.concept, listingId)
+    return buildOkRedirect(payment, listingId)
   }
 
   // Confirmar contra PayPhone
@@ -87,14 +110,14 @@ export async function GET(req: NextRequest) {
       },
     })
     console.error('PayPhone confirm error:', msg)
-    return redirectTo('/pago/resultado?status=error&reason=confirm&paymentId=' + payment.id + typeSuffix(payment.concept))
+    return redirectTo('/pago/resultado?status=error&reason=confirm&paymentId=' + payment.id + typeSuffix(payment))
   }
 
   const { paymentStatus } = mapPayphoneStatus(ppResponse)
 
   if (paymentStatus === 'pending') {
     // No tocamos el status (sigue pending); el reconciliador lo revisara.
-    return redirectTo('/pago/resultado?status=error&reason=pending&paymentId=' + payment.id + typeSuffix(payment.concept))
+    return redirectTo('/pago/resultado?status=error&reason=pending&paymentId=' + payment.id + typeSuffix(payment))
   }
 
   if (paymentStatus === 'cancelled' || paymentStatus === 'rejected') {
@@ -105,7 +128,7 @@ export async function GET(req: NextRequest) {
       sendEmail: false, // user-facing: la UI /pago/resultado cubre
     })
     return redirectTo(
-      '/pago/resultado?status=' + paymentStatus + '&paymentId=' + payment.id + typeSuffix(payment.concept)
+      '/pago/resultado?status=' + paymentStatus + '&paymentId=' + payment.id + typeSuffix(payment)
     )
   }
 
@@ -124,12 +147,12 @@ export async function GET(req: NextRequest) {
   if (result.status === 'missing_data') {
     console.error('Pago aprobado pero faltan datos:', payment.id, result.reason)
     return redirectTo(
-      '/pago/resultado?status=error&reason=' + result.reason + '&paymentId=' + payment.id + typeSuffix(payment.concept)
+      '/pago/resultado?status=error&reason=' + result.reason + '&paymentId=' + payment.id + typeSuffix(payment)
     )
   }
   const listingId =
     result.status === 'activated' || result.status === 'already_active'
       ? result.listingId
       : null
-  return buildOkRedirect(payment.id, payment.concept, listingId)
+  return buildOkRedirect(payment, listingId)
 }

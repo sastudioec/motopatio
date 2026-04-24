@@ -48,6 +48,7 @@ function PublicarContent() {
   const [plansLoading, setPlansLoading] = useState(true)
   const [publishError, setPublishError] = useState<string | null>(null)
   const [cajitaLoading, setCajitaLoading] = useState(false)
+  const [cajitaOpened, setCajitaOpened] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
   const [hasFreeActive, setHasFreeActive] = useState(false)
   const [freeCooldownDays, setFreeCooldownDays] = useState(0)
@@ -472,9 +473,9 @@ function PublicarContent() {
           return
         }
         await openCajita(data.cajita)
-        // La Cajita se abre sola. El setCajitaLoading(false) se deja en true
-        // porque el usuario va a completar el pago; al final PayPhone redirige
-        // a /api/pagos/confirmar y luego a /pago/resultado.
+        // La Cajita ya esta en el DOM. Cambiamos el copy del boton a "Paga
+        // abajo" para que no parezca clickeable y guie al usuario al widget.
+        setCajitaOpened(true)
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Error al abrir pasarela'
         setPublishError(msg)
@@ -900,10 +901,11 @@ function PublicarContent() {
               </div>
             )}
 
-            <button onClick={handleSubmit} disabled={loading || uploading || cajitaLoading || savingDraft}
-              style={{width:'100%',padding:'14px',background:'#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'15px',fontWeight:800,cursor: (loading||uploading||cajitaLoading||savingDraft) ? 'not-allowed' : 'pointer',textTransform:'uppercase'}}>
+            <button onClick={handleSubmit} disabled={loading || uploading || cajitaLoading || cajitaOpened || savingDraft}
+              style={{width:'100%',padding:'14px',background: cajitaOpened ? '#8a8a8a' : '#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'15px',fontWeight:800,cursor: (loading||uploading||cajitaLoading||cajitaOpened||savingDraft) ? 'not-allowed' : 'pointer',textTransform:'uppercase'}}>
               {isEditMode ? (loading ? 'Guardando...' : 'Guardar cambios') :
                loading ? 'Publicando...' :
+               cajitaOpened ? 'Paga abajo ↓' :
                cajitaLoading ? 'Abriendo pasarela...' :
                (selectedPlan && selectedPlan.priceCents > 0) ? 'Pagar $' + (selectedPlan.priceCents / 100).toFixed(0) + ' con PayPhone' :
                'Publicar moto'}

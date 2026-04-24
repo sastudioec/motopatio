@@ -49,14 +49,18 @@ export async function handleRejectedPayment(
 
   if (opts.sendEmail) {
     const md = payment.metadata as Record<string, unknown> | null
+    const isUpgrade =
+      payment.concept === 'plan' && !!md && md.isUpgrade === true
+    const emailConcept: 'plan' | 'featured' | 'upgrade' =
+      payment.concept === 'featured' ? 'featured' : isUpgrade ? 'upgrade' : 'plan'
     const draft =
       md && typeof md === 'object' && md.listingDraft && typeof md.listingDraft === 'object'
         ? (md.listingDraft as { marca?: string; modelo?: string })
         : null
     let titulo =
       draft && draft.marca && draft.modelo ? draft.marca + ' ' + draft.modelo : 'tu anuncio'
-    // Para featured el listing ya existe; usamos su marca/modelo si el draft no esta.
-    if (payment.concept === 'featured' && payment.listingId && (!draft || !draft.marca)) {
+    // Para featured y upgrade el listing ya existe; usamos su marca/modelo.
+    if ((payment.concept === 'featured' || isUpgrade) && payment.listingId && (!draft || !draft.marca)) {
       const listing = await prisma.listing.findUnique({
         where: { id: payment.listingId },
         select: { marca: true, modelo: true },
@@ -70,7 +74,7 @@ export async function handleRejectedPayment(
         titulo,
         motivo: opts.newStatus,
         paymentId: payment.id,
-        concept: payment.concept === 'featured' ? 'featured' : 'plan',
+        concept: emailConcept,
       })
     } catch (e) {
       console.error('[handleRejectedPayment] email error:', e)
