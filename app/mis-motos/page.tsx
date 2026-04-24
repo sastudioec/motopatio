@@ -280,8 +280,8 @@ export default function MisMotosPage() {
           </div>
         )
         return (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:'20px'}}>
-          <div style={{background:'#fff',borderRadius:'12px',padding:'32px',maxWidth:'480px',width:'100%'}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:'20px',overflowY:'auto'}}>
+          <div style={{background:'#fff',borderRadius:'12px',padding:'clamp(16px, 4vw, 32px)',maxWidth:'480px',width:'100%',maxHeight:'calc(100vh - 40px)',overflowY:'auto',boxSizing:'border-box'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
               <div style={{fontFamily:'Poppins,sans-serif',fontSize:'18px',fontWeight:900,color:'#1E2340'}}>
                 {modalMoto.planTipo === 'gratis' ? 'Mejorar plan' : 'Promocionar moto'}
@@ -340,6 +340,7 @@ export default function MisMotosPage() {
               )}
               {modalMoto.planTipo === 'full' && renderDestacarCard()}
             </div>
+            <div id="pp-button-destacar" style={{marginTop:'16px'}}></div>
           </div>
         </div>
         )
