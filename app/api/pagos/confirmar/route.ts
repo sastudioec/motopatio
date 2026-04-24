@@ -14,6 +14,10 @@ function redirectTo(path: string): NextResponse {
   return NextResponse.redirect(getBaseUrl() + path)
 }
 
+function typeSuffix(concept: string | undefined): string {
+  return concept === 'featured' ? '&type=featured' : ''
+}
+
 async function buildOkRedirect(
   paymentId: string,
   concept: string,
@@ -83,14 +87,14 @@ export async function GET(req: NextRequest) {
       },
     })
     console.error('PayPhone confirm error:', msg)
-    return redirectTo('/pago/resultado?status=error&reason=confirm&paymentId=' + payment.id)
+    return redirectTo('/pago/resultado?status=error&reason=confirm&paymentId=' + payment.id + typeSuffix(payment.concept))
   }
 
   const { paymentStatus } = mapPayphoneStatus(ppResponse)
 
   if (paymentStatus === 'pending') {
     // No tocamos el status (sigue pending); el reconciliador lo revisara.
-    return redirectTo('/pago/resultado?status=error&reason=pending&paymentId=' + payment.id)
+    return redirectTo('/pago/resultado?status=error&reason=pending&paymentId=' + payment.id + typeSuffix(payment.concept))
   }
 
   if (paymentStatus === 'cancelled' || paymentStatus === 'rejected') {
@@ -101,7 +105,7 @@ export async function GET(req: NextRequest) {
       sendEmail: false, // user-facing: la UI /pago/resultado cubre
     })
     return redirectTo(
-      '/pago/resultado?status=' + paymentStatus + '&paymentId=' + payment.id
+      '/pago/resultado?status=' + paymentStatus + '&paymentId=' + payment.id + typeSuffix(payment.concept)
     )
   }
 
@@ -120,7 +124,7 @@ export async function GET(req: NextRequest) {
   if (result.status === 'missing_data') {
     console.error('Pago aprobado pero faltan datos:', payment.id, result.reason)
     return redirectTo(
-      '/pago/resultado?status=error&reason=' + result.reason + '&paymentId=' + payment.id
+      '/pago/resultado?status=error&reason=' + result.reason + '&paymentId=' + payment.id + typeSuffix(payment.concept)
     )
   }
   const listingId =

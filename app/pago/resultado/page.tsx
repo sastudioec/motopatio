@@ -109,7 +109,7 @@ function ResultadoContent() {
           <div style={msg}>
             Tu banco rechazó la transacción. No se realizó ningún cargo. Puedes intentar nuevamente con otra tarjeta.
           </div>
-          <Link href={paymentId ? ("/publicar?retry=" + paymentId) : "/publicar"} style={btnPrimary}>Intentar de nuevo</Link>
+          <Link href={paymentId ? ((isFeatured ? "/mis-motos?retry=" : "/publicar?retry=") + paymentId) : (isFeatured ? "/mis-motos" : "/publicar")} style={btnPrimary}>Intentar de nuevo</Link>
           <Link href="/contacto" style={btnSecondary}>Contactar soporte</Link>
         </div>
       </div>
@@ -125,7 +125,7 @@ function ResultadoContent() {
           <div style={msg}>
             Cancelaste el pago antes de completarlo. No se realizó ningún cargo en tu cuenta. Puedes intentar nuevamente cuando quieras.
           </div>
-          <Link href={paymentId ? ("/publicar?retry=" + paymentId) : "/publicar"} style={btnPrimary}>Intentar de nuevo</Link>
+          <Link href={paymentId ? ((isFeatured ? "/mis-motos?retry=" : "/publicar?retry=") + paymentId) : (isFeatured ? "/mis-motos" : "/publicar")} style={btnPrimary}>Intentar de nuevo</Link>
           <Link href="/" style={btnSecondary}>Ir al inicio</Link>
         </div>
       </div>

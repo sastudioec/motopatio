@@ -49,21 +49,29 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
 export async function sendPagoNoCompletadoEmail(
   to: string,
   name: string,
-  info: { titulo: string; motivo: 'cancelled' | 'rejected'; paymentId: string }
+  info: { titulo: string; motivo: 'cancelled' | 'rejected'; paymentId: string; concept: 'plan' | 'featured' }
 ) {
   const n = (name || '').split(' ')[0] || 'hola'
   const mensaje =
     info.motivo === 'cancelled'
       ? 'Cancelaste el pago antes de finalizar. No se realizó ningún cargo.'
       : 'Tu banco rechazó la transacción. No se realizó ningún cargo.'
+  const esFeatured = info.concept === 'featured'
+  const ctaPath = esFeatured ? '/mis-motos?retry=' : '/publicar?retry='
+  const tagline = esFeatured
+    ? 'Destacado no activado'
+    : 'Anuncio sin publicar'
+  const contexto = esFeatured
+    ? ' Tu anuncio sigue activo; puedes reintentar el destacado cuando quieras.'
+    : ' Tu anuncio quedó guardado y puedes reintentar cuando quieras.'
   const body =
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">Tu pago no se completó</h2>' +
-    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, ' + mensaje + ' Tu anuncio quedó guardado y puedes reintentar cuando quieras.</p>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, ' + mensaje + contexto + '</p>' +
     '<div style="background:#f9f9fb;border-radius:8px;padding:16px 20px;margin:16px 0;border-left:4px solid #e8572a;">' +
-    '<p style="margin:0 0 4px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Anuncio sin publicar</p>' +
+    '<p style="margin:0 0 4px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">' + tagline + '</p>' +
     '<p style="margin:0;font-size:17px;font-weight:700;color:#1a1f36;">' + info.titulo + '</p>' +
     '</div>' +
-    btn(BASE + '/publicar?retry=' + info.paymentId, 'Intentar de nuevo')
+    btn(BASE + ctaPath + info.paymentId, 'Intentar de nuevo')
   return resend.emails.send({
     from: 'MotoPatio <noreply@motopatio.com>',
     to,

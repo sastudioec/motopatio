@@ -1,14 +1,16 @@
 'use client'
 import { useSession } from 'next-auth/react'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { openCajita } from '@/lib/cajita'
 
-export default function MisMotosPage() {
+function MisMotosContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const retryPaymentId = searchParams.get('retry')
   const [motos, setMotos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [modalMoto, setModalMoto] = useState<any>(null)
@@ -16,6 +18,7 @@ export default function MisMotosPage() {
   const [copiado, setCopiado] = useState<string | null>(null)
   const [destacarLoading, setDestacarLoading] = useState(false)
   const [destacarError, setDestacarError] = useState<string | null>(null)
+  const [retryHandled, setRetryHandled] = useState(false)
 
   const handleDestacar = async (listingId: string) => {
     setDestacarError(null)
@@ -64,6 +67,31 @@ export default function MisMotosPage() {
         .catch(() => setLoading(false))
     }
   }, [session])
+
+  // Reintento de Destacado (?retry=paymentId): busca el Payment featured,
+  // encuentra la moto correspondiente y abre el modal Promocionar moto.
+  useEffect(() => {
+    if (!retryPaymentId || retryHandled) return
+    if (status !== 'authenticated') return
+    if (loading || motos.length === 0) return
+    let cancelled = false
+    setRetryHandled(true)
+    fetch('/api/pagos/' + retryPaymentId + '/draft', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return
+        if (!d?.ok || d.concept !== 'featured' || !d.listingId) return
+        const moto = motos.find(m => m.id === d.listingId)
+        if (moto) setModalMoto(moto)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled && typeof window !== 'undefined') {
+          window.history.replaceState(null, '', '/mis-motos')
+        }
+      })
+    return () => { cancelled = true }
+  }, [retryPaymentId, retryHandled, status, loading, motos])
 
   const handleEstado = async (id: string, estado: string) => {
     setProcesando(id)
@@ -346,5 +374,13 @@ export default function MisMotosPage() {
         )
       })()}
     </div>
+  )
+}
+
+export default function MisMotosPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#f4f4f4',padding:'40px',textAlign:'center'}}>Cargando...</div>}>
+      <MisMotosContent />
+    </Suspense>
   )
 }

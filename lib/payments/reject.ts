@@ -53,13 +53,24 @@ export async function handleRejectedPayment(
       md && typeof md === 'object' && md.listingDraft && typeof md.listingDraft === 'object'
         ? (md.listingDraft as { marca?: string; modelo?: string })
         : null
-    const titulo =
+    let titulo =
       draft && draft.marca && draft.modelo ? draft.marca + ' ' + draft.modelo : 'tu anuncio'
+    // Para featured el listing ya existe; usamos su marca/modelo si el draft no esta.
+    if (payment.concept === 'featured' && payment.listingId && (!draft || !draft.marca)) {
+      const listing = await prisma.listing.findUnique({
+        where: { id: payment.listingId },
+        select: { marca: true, modelo: true },
+      })
+      if (listing?.marca && listing?.modelo) {
+        titulo = listing.marca + ' ' + listing.modelo
+      }
+    }
     try {
       await sendPagoNoCompletadoEmail(payment.user.email, payment.user.name || 'Usuario', {
         titulo,
         motivo: opts.newStatus,
         paymentId: payment.id,
+        concept: payment.concept === 'featured' ? 'featured' : 'plan',
       })
     } catch (e) {
       console.error('[handleRejectedPayment] email error:', e)

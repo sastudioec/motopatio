@@ -24,6 +24,8 @@ export async function GET(
       userId: true,
       status: true,
       planId: true,
+      concept: true,
+      listingId: true,
       metadata: true,
       payphoneRawResponse: true,
     },
@@ -39,9 +41,25 @@ export async function GET(
 
   if (payment.status === 'approved') {
     return NextResponse.json(
-      { error: 'Este pago ya fue aprobado. La publicacion ya existe.' },
+      { error: 'Este pago ya fue aprobado.' },
       { status: 400 }
     )
+  }
+
+  if (payment.concept === 'featured') {
+    if (!payment.listingId) {
+      return NextResponse.json(
+        { error: 'Pago de destacado sin listing asociado' },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json({
+      ok: true,
+      paymentId: payment.id,
+      status: payment.status,
+      concept: 'featured',
+      listingId: payment.listingId,
+    })
   }
 
   let draft: Record<string, unknown> | null = null
@@ -68,6 +86,7 @@ export async function GET(
     ok: true,
     paymentId: payment.id,
     status: payment.status,
+    concept: 'plan',
     planId: payment.planId,
     draft,
   })
