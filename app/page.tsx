@@ -57,16 +57,25 @@ export const metadata: Metadata = {
   },
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
 async function getDestacadas() {
   try {
-    return await prisma.listing.findMany({
+    const all = await prisma.listing.findMany({
       where: {
         estado: 'activo',
         destacadoHasta: { gt: new Date() },
       },
-      orderBy: { destacadoHasta: 'desc' },
-      take: 8,
+      orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],
     })
+    return shuffle(all)
   } catch {
     return []
   }
