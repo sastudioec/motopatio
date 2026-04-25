@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import MotoDetailClient from './MotoDetailClient'
+import RelatedBlock from './RelatedBlock'
+import { getRelatedListings, deriveHeader } from './related'
 
 export const dynamic = 'force-dynamic'
 
@@ -115,6 +117,15 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     },
   }
 
+  // Motos relacionadas: server-side, en paralelo a otros lookups idealmente,
+  // pero acá lo hacemos secuencial para no inflar el critical path. Si la base
+  // tiene <3 motos relacionadas + relleno, getRelatedListings devuelve [] y
+  // el bloque no se renderiza (case sitio nuevo con poco inventario).
+  const related = await getRelatedListings(moto)
+  const relatedHeader = related.length > 0
+    ? deriveHeader(moto, related, marcaSlug)
+    : null
+
   const breadcrumbItems: Array<{ name: string; item: string }> = [
     { name: 'Inicio', item: `${BASE}/` },
     { name: 'Motos', item: `${BASE}/motos` },
@@ -145,6 +156,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <MotoDetailClient moto={moto} marcaSlug={marcaSlug} />
+      {relatedHeader && (
+        <RelatedBlock
+          title={relatedHeader.title}
+          listings={related}
+          chips={relatedHeader.chips}
+        />
+      )}
     </>
   )
 }
