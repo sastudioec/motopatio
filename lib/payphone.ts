@@ -8,7 +8,7 @@ const PAYPHONE_API_BASE = 'https://pay.payphonetodoesposible.com/api'
 export type PayPhoneConfirmResponse = {
   transactionId?: number
   clientTransactionId?: string
-  transactionStatus?: 'Approved' | 'Canceled' | 'Pending' | string
+  transactionStatus?: 'Approved' | 'Canceled' | 'Pending' | 'NeedsVerification' | string
   amount?: number
   authorizationCode?: string
   message?: string
@@ -19,6 +19,11 @@ export type PayPhoneConfirmResponse = {
   documentId?: string
   storeName?: string
   date?: string
+  // Diagnostico de respuestas anomalas (HTML / no-JSON) del Confirm.
+  // Permiten al caller decidir consultar el read-only Sale/client en lugar
+  // de asumir cancelacion.
+  httpStatus?: number
+  rawHtmlBody?: string
   [key: string]: unknown
 }
 
@@ -31,16 +36,16 @@ function getConfig() {
 }
 
 /**
- * Detecta si una respuesta de PayPhone es en realidad una cancelacion
- * del usuario (PayPhone devuelve HTML de Runtime Error en ese caso).
+ * Detecta si la respuesta es HTML (no JSON). PayPhone devuelve HTML al
+ * /button/V2/Confirm en varios escenarios distintos (no solo cancelacion):
+ * cuando la tx ya fue capturada y aprobada, cuando ya fue confirmada antes,
+ * o errores transitorios. Por eso este predicado solo detecta HTML; la
+ * decision de que hacer queda en el caller.
  */
-function isUserCancellationHtml(text: string): boolean {
-  const lower = text.toLowerCase()
-  return (
-    lower.includes('<!doctype html') ||
-    lower.includes('<html') ||
-    lower.includes('runtime error')
-  )
+function looksLikeHtml(text: string, contentType: string | null): boolean {
+  if (contentType && contentType.toLowerCase().includes('text/html')) return true
+  const head = text.trimStart().slice(0, 200).toLowerCase()
+  return head.startsWith('<!doctype html') || head.startsWith('<html') || head.includes('<html')
 }
 
 /**
@@ -66,17 +71,32 @@ export async function confirmTransaction(params: {
   })
 
   const text = await res.text()
+  const contentType = res.headers.get('content-type')
 
-  // Caso especial: PayPhone devuelve HTML de Runtime Error cuando
-  // el usuario rechaza el pago desde la app. Lo tratamos como Canceled.
-  if (isUserCancellationHtml(text)) {
-    console.log('PayPhone: usuario rechazo el pago (HTML Runtime Error detectado). ClientTxId:', params.clientTxId)
+  console.log(
+    '[PayPhone Confirm] status=' + res.status,
+    'content-type=' + (contentType || '-'),
+    'clientTxId=' + params.clientTxId,
+    'bodyLen=' + text.length
+  )
+
+  // PayPhone responde HTML al Confirm en varios escenarios (tx ya capturada,
+  // tx ya confirmada, error transitorio, runtime error). NO asumimos
+  // cancelacion: devolvemos NeedsVerification para que el caller consulte
+  // el read-only /Sale/client/{clientTxId} y use ESA respuesta como fuente
+  // de verdad.
+  if (looksLikeHtml(text, contentType)) {
+    console.log(
+      '[PayPhone Confirm] HTML response. ClientTxId:', params.clientTxId,
+      'body[0:500]=', text.slice(0, 500).replace(/\s+/g, ' ')
+    )
     return {
       transactionId: params.id,
       clientTransactionId: params.clientTxId,
-      transactionStatus: 'Canceled',
-      statusCode: 2,
-      message: 'El usuario rechazo el pago desde la app',
+      transactionStatus: 'NeedsVerification',
+      httpStatus: res.status,
+      rawHtmlBody: text.slice(0, 2000),
+      message: 'PayPhone respondio HTML; requiere verificacion read-only',
     } as PayPhoneConfirmResponse
   }
 
@@ -84,8 +104,21 @@ export async function confirmTransaction(params: {
   try {
     data = JSON.parse(text)
   } catch {
-    throw new Error('PayPhone Confirm respondio no-JSON: ' + text.slice(0, 500))
+    console.log(
+      '[PayPhone Confirm] Non-JSON non-HTML response. ClientTxId:', params.clientTxId,
+      'body[0:500]=', text.slice(0, 500)
+    )
+    return {
+      transactionId: params.id,
+      clientTransactionId: params.clientTxId,
+      transactionStatus: 'NeedsVerification',
+      httpStatus: res.status,
+      rawHtmlBody: text.slice(0, 2000),
+      message: 'PayPhone respondio en formato no reconocido',
+    } as PayPhoneConfirmResponse
   }
+
+  data.httpStatus = res.status
 
   if (!res.ok) {
     throw new Error('PayPhone Confirm fallo ' + res.status + ': ' + (data.message || text.slice(0, 200)))
@@ -115,7 +148,8 @@ export async function querySaleByClientTxId(
   if (res.status === 404) return null
 
   const text = await res.text()
-  if (isUserCancellationHtml(text)) {
+  const contentType = res.headers.get('content-type')
+  if (looksLikeHtml(text, contentType)) {
     return {
       clientTransactionId: clientTxId,
       transactionStatus: 'Canceled',
@@ -137,11 +171,24 @@ export async function querySaleByClientTxId(
   return data
 }
 
-export type PaymentStatus = 'approved' | 'rejected' | 'cancelled' | 'pending' | 'error'
+export type PaymentStatus = 'approved' | 'rejected' | 'cancelled' | 'pending' | 'error' | 'unknown'
 
 /**
  * Traduce la respuesta de PayPhone al estado interno del Payment.
- * Mantiene 'pending' como estado real (antes caia a 'rejected' por error).
+ *
+ * Casos:
+ *  - Approved -> 'approved'
+ *  - Canceled CON authorizationCode -> 'cancelled' con reason 'post_auth_cancel_or_reverso'.
+ *    El banco autorizo y la tx puede haber sido capturada y luego reversada.
+ *    El caller debe alertar al admin para verificacion manual.
+ *  - Canceled SIN authorizationCode -> 'cancelled' con reason 'user_rejected'.
+ *    Cancelacion pre-autorizacion (usuario rechazo en la app, timeout, etc).
+ *    NOTA: el authorizationCode no es senal perfecta de captura — tambien
+ *    aparece en 3DS pre-captura. La diferenciacion sirve para priorizar
+ *    revision manual, no para garantizar significado.
+ *  - Pending -> 'pending'
+ *  - NeedsVerification -> 'unknown'. El caller debe consultar Sale/client.
+ *  - Otro -> 'rejected'
  */
 export function mapPayphoneStatus(res: PayPhoneConfirmResponse): {
   paymentStatus: PaymentStatus
@@ -149,8 +196,14 @@ export function mapPayphoneStatus(res: PayPhoneConfirmResponse): {
 } {
   const s = res.transactionStatus
   if (s === 'Approved') return { paymentStatus: 'approved' }
-  if (s === 'Canceled') return { paymentStatus: 'cancelled', reason: res.message }
+  if (s === 'Canceled') {
+    if (res.authorizationCode) {
+      return { paymentStatus: 'cancelled', reason: 'post_auth_cancel_or_reverso' }
+    }
+    return { paymentStatus: 'cancelled', reason: 'user_rejected' }
+  }
   if (s === 'Pending') return { paymentStatus: 'pending', reason: 'PayPhone todavia no decide' }
+  if (s === 'NeedsVerification') return { paymentStatus: 'unknown', reason: res.message }
   return {
     paymentStatus: 'rejected',
     reason: res.message || 'Estado no reconocido: ' + String(s),
