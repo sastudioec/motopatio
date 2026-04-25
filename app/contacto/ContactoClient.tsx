@@ -49,9 +49,9 @@ export default function ContactoPage() {
           <p style={{fontSize:'15px',color:'#666'}}>Estamos aquí para ayudarte. Escríbenos y te respondemos en menos de 48 horas hábiles.</p>
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'32px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))',gap:'32px'}}>
           <div>
-            <div style={{background:'#fff',borderRadius:'8px',padding:'32px',border:'1px solid #e8e8e8',marginBottom:'16px'}}>
+            <div style={{background:'#fff',borderRadius:'8px',padding:'clamp(16px, 4vw, 32px)',border:'1px solid #e8e8e8',marginBottom:'16px'}}>
               <div style={{fontSize:'14px',fontWeight:800,color:'#1E2340',textTransform:'uppercase',marginBottom:'20px'}}>Información de contacto</div>
               <div style={{display:'flex',gap:'14px',alignItems:'flex-start',marginBottom:'16px'}}>
                 <div style={{fontSize:'20px',flexShrink:0}}>📧</div>
@@ -89,7 +89,7 @@ export default function ContactoPage() {
             </div>
           </div>
 
-          <div style={{background:'#fff',borderRadius:'8px',padding:'32px',border:'1px solid #e8e8e8'}}>
+          <div style={{background:'#fff',borderRadius:'8px',padding:'clamp(16px, 4vw, 32px)',border:'1px solid #e8e8e8'}}>
             <div style={{fontSize:'14px',fontWeight:800,color:'#1E2340',textTransform:'uppercase',marginBottom:'20px'}}>Envíanos un mensaje</div>
             {status === 'ok' && (
               <div style={{background:'#dcfce7',border:'1px solid #86efac',borderRadius:'6px',padding:'12px 16px',marginBottom:'16px'}}>
@@ -103,15 +103,15 @@ export default function ContactoPage() {
             )}
             <div style={{marginBottom:'14px'}}>
               <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Nombre</label>
-              <input value={nombre} onChange={(e) => setNombre(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px',boxSizing:'border-box'}} placeholder="Tu nombre" disabled={sending} />
+              <input value={nombre} onChange={(e) => setNombre(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'16px',boxSizing:'border-box'}} placeholder="Tu nombre" disabled={sending} />
             </div>
             <div style={{marginBottom:'14px'}}>
               <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px',boxSizing:'border-box'}} placeholder="tu@email.com" disabled={sending} />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'16px',boxSizing:'border-box'}} placeholder="tu@email.com" disabled={sending} />
             </div>
             <div style={{marginBottom:'14px'}}>
               <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Asunto</label>
-              <select value={asunto} onChange={(e) => setAsunto(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px',boxSizing:'border-box'}} disabled={sending}>
+              <select value={asunto} onChange={(e) => setAsunto(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'16px',boxSizing:'border-box'}} disabled={sending}>
                 <option>Tengo una pregunta</option>
                 <option>Problema con mi publicación</option>
                 <option>Quiero anunciar</option>
@@ -122,7 +122,7 @@ export default function ContactoPage() {
             </div>
             <div style={{marginBottom:'20px'}}>
               <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Mensaje</label>
-              <textarea rows={5} value={mensaje} onChange={(e) => setMensaje(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px',resize:'vertical',boxSizing:'border-box',fontFamily:'inherit'}} placeholder="Escribe tu mensaje..." disabled={sending} />
+              <textarea rows={5} value={mensaje} onChange={(e) => setMensaje(e.target.value)} style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'16px',resize:'vertical',boxSizing:'border-box',fontFamily:'inherit'}} placeholder="Escribe tu mensaje..." disabled={sending} />
             </div>
             <input type="text" name="website" value={website} onChange={(e) => setWebsite(e.target.value)} style={{position:'absolute',left:'-9999px',width:'1px',height:'1px',opacity:0}} tabIndex={-1} autoComplete="off" />
             <button onClick={handleSubmit} disabled={sending} style={{width:'100%',padding:'12px',background: sending ? '#aaa' : '#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'14px',fontWeight:800,cursor: sending ? 'not-allowed' : 'pointer',textTransform:'uppercase'}}>
