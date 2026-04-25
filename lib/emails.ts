@@ -160,6 +160,34 @@ export async function sendMotoPublicadaEmail(to: string, name: string, moto: { t
   return resend.emails.send({ from: 'MotoPatio <noreply@motopatio.com>', to, subject: 'Tu moto "' + moto.titulo + '" ya está publicada ✅', html: wrap(body) })
 }
 
+export async function sendExpiracionAviso(opts: {
+  to: string
+  nombre: string
+  tituloMoto: string
+  expiraEn: Date
+  listingId: string
+}) {
+  const n = (opts.nombre || '').split(' ')[0] || 'hola'
+  const fecha = new Intl.DateTimeFormat('es-EC', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  }).format(opts.expiraEn)
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">⏰ Tu moto expira pronto</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, tu publicación en MotoPatio expira en <strong>3 días</strong>. Renueva o vuelve a publicarla para que siga visible para los compradores.</p>' +
+    '<div style="background:#fff4e6;border-radius:8px;padding:16px 20px;margin:16px 0;border-left:4px solid #e8572a;">' +
+    '<p style="margin:0 0 4px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Tu anuncio</p>' +
+    '<p style="margin:0;font-size:17px;font-weight:700;color:#1a1f36;">' + opts.tituloMoto + '</p>' +
+    '<p style="margin:6px 0 0;font-size:15px;font-weight:700;color:#e8572a;">Expira el ' + fecha + '</p>' +
+    '</div>' +
+    btn(BASE + '/mis-motos#' + opts.listingId, 'Renovar mi anuncio')
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to: opts.to,
+    subject: 'Tu moto en MotoPatio expira en 3 días',
+    html: wrap(body),
+  })
+}
+
 const ADMIN_EMAIL = 'info@motopatio.com'
 
 export async function notifyAdmin(subject: string, body: string): Promise<void> {

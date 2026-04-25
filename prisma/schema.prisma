@@ -63,6 +63,7 @@ model Listing {
   destacadoHasta DateTime?
   publishedAt    DateTime?
   expiraEn       DateTime?
+  recordatorioExpiracionEnviadoAt DateTime?
   fotos          String?   @db.Text
   esElectrica    Boolean   @default(false)
   video          String?
