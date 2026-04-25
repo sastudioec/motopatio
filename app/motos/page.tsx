@@ -11,7 +11,7 @@ import { FiltrosSidebar, FiltrosMobileButton, SortSelect } from './FiltrosPanel'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const PER_PAGE = 24
+const PAGE_SIZE = 16
 
 type SearchParams = { [key: string]: string | string[] | undefined }
 type Sort = 'recientes' | 'precio_asc' | 'precio_desc' | 'km_asc'
@@ -92,7 +92,8 @@ function buildAndFilters(f: Filtros): any[] {
   if (f.ciudad) ands.push({ ciudad: f.ciudad })
   if (f.tipos.length) ands.push({ tipo: { in: f.tipos } })
   if (f.cilindrajes.length && !f.soloElectricas) ands.push({ cilindraje: { in: f.cilindrajes } })
-  // NOTA: picoyplaca NO va al where; se aplica post-query client-side.
+  // NOTA: picoyplaca NO va al where; se aplica post-query server-side
+  // sobre la página actual (ver bloque más abajo).
   return ands
 }
 
@@ -151,8 +152,8 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
     prisma.listing.findMany({
       where: restoWhere,
       orderBy: buildOrderBy(filtros.sort),
-      skip: (page - 1) * PER_PAGE,
-      take: PER_PAGE,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
     prisma.listing.count({ where: restoWhere }),
     prisma.motoBrand.findMany({ where: { active: true }, orderBy: { sortOrder: 'asc' } }),
@@ -164,12 +165,12 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
   let resto = restoDB
   if (filtros.picoyplaca) {
     const dia = parseInt(filtros.picoyplaca)
-    destacadas = destacadas.filter(m => puedeCircularElDia(m.placa || '', m.ciudad || '', dia))
-    resto = resto.filter(m => puedeCircularElDia(m.placa || '', m.ciudad || '', dia))
+    destacadas = destacadas.filter(m => puedeCircularElDia(m.placa || '', m.ciudad || '', dia, m.esElectrica))
+    resto = resto.filter(m => puedeCircularElDia(m.placa || '', m.ciudad || '', dia, m.esElectrica))
   }
 
   const totalCount = (page === 1 ? destacadasDB.length : 0) + restoCount
-  const totalPages = Math.max(1, Math.ceil(restoCount / PER_PAGE))
+  const totalPages = Math.max(1, Math.ceil(restoCount / PAGE_SIZE))
   const nombresMarcas = marcasDB.map(b => b.name)
 
   const initialFiltros = {
@@ -235,7 +236,7 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
           }}
         >
           <div>
-            <h1 style={{ fontFamily: 'Poppins,sans-serif', fontSize: '24px', fontWeight: 900, color: '#1E2340' }}>
+            <h1 id="resultados" style={{ fontFamily: 'Poppins,sans-serif', fontSize: '24px', fontWeight: 900, color: '#1E2340', scrollMarginTop: '80px' }}>
               Motos en venta
             </h1>
             <div style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>
@@ -246,7 +247,7 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <FiltrosMobileButton initial={initialFiltros} marcasDB={nombresMarcas} />
+            <FiltrosMobileButton initial={initialFiltros} marcasDB={nombresMarcas} totalCount={totalCount} />
             <SortSelect initial={filtros.sort} />
           </div>
         </div>
@@ -255,7 +256,7 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
           className="motos-grid-2col"
           style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '20px', alignItems: 'flex-start' }}
         >
-          <FiltrosSidebar initial={initialFiltros} marcasDB={nombresMarcas} />
+          <FiltrosSidebar initial={initialFiltros} marcasDB={nombresMarcas} totalCount={totalCount} />
 
           <div>
             {!paginaTieneDatos ? (
@@ -294,7 +295,7 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
               <>
                 {page === 1 && destacadas.length > 0 && (
                   <>
-                    <DestacadasBlock listings={destacadas} />
+                    <DestacadasBlock listings={destacadas} diaSeleccionado={filtros.picoyplaca} />
                     <div style={midBannerRowStyle}>
                       <Banner position="motos_mid_left" aspectRatio="4/1" />
                       <Banner position="motos_mid_right" aspectRatio="4/1" />
@@ -317,7 +318,7 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
                   </div>
                 ) : (
                   <div style={gridStyle}>
-                    {resto.map(l => <MotoCard key={l.id} l={l} />)}
+                    {resto.map(l => <MotoCard key={l.id} l={l} diaSeleccionado={filtros.picoyplaca} />)}
                   </div>
                 )}
 

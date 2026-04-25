@@ -26,9 +26,22 @@ export interface PicoYPlacaInfo {
   ultimoDigito: string | null
   horarios: string[]
   descripcion: string
+  esElectrica?: boolean     // caso especial: motos eléctricas no tienen restricción
 }
 
-export function calcularPicoYPlaca(placa: string, ciudad: string): PicoYPlacaInfo {
+export function calcularPicoYPlaca(placa: string, ciudad: string, esElectrica?: boolean): PicoYPlacaInfo {
+  if (esElectrica) {
+    return {
+      aplica: true,
+      diaRestringido: null,
+      diaNombre: null,
+      ultimoDigito: null,
+      horarios: [],
+      descripcion: 'Eléctrica: sin restricción de Pico y Placa',
+      esElectrica: true,
+    }
+  }
+
   const esQuito = ciudad?.toLowerCase().trim() === 'quito'
 
   if (!esQuito) {
@@ -66,7 +79,8 @@ export function calcularPicoYPlaca(placa: string, ciudad: string): PicoYPlacaInf
 }
 
 // Helpers para filtros: ¿esta moto puedo usarla el día X? (1=lunes..5=viernes, 0 o 6 = libre)
-export function puedeCircularElDia(placa: string, ciudad: string, dia: number): boolean {
+export function puedeCircularElDia(placa: string, ciudad: string, dia: number, esElectrica?: boolean): boolean {
+  if (esElectrica) return true              // eléctricas circulan siempre, sin importar el día
   const info = calcularPicoYPlaca(placa, ciudad)
   if (!info.aplica) return true           // fuera de Quito circula siempre
   if (dia === 0 || dia === 6) return true  // fin de semana libre

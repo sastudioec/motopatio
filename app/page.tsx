@@ -120,13 +120,6 @@ export default async function Home() {
             <div className="home-motos-grid">
               {destacadas.slice(0, 4).map(l => <MotoCard key={l.id} l={l} />)}
             </div>
-            {destacadas.length > 4 && (
-              <div style={{textAlign:'center',marginTop:'18px'}}>
-                <Link href="/motos" style={{display:'inline-block',background:'#E8390E',color:'#fff',padding:'11px 28px',fontSize:'12px',fontWeight:800,borderRadius:'4px',textDecoration:'none',textTransform:'uppercase',letterSpacing:'0.5px'}}>
-                  Ver todas las destacadas
-                </Link>
-              </div>
-            )}
           </div>
         )}
         <div style={{maxWidth:'1200px',margin:'0 auto',padding:'12px 20px 4px'}}>

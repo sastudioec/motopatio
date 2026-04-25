@@ -83,6 +83,7 @@ type FiltrosState = {
   filtros: Filtros
   update: (patch: Partial<Filtros>, opts?: { immediate?: boolean }) => void
   limpiar: () => void
+  flush: () => void
   seccionesAbiertas: {
     precio: boolean; anio: boolean; km: boolean; marcas: boolean;
     ubicacion: boolean; tipos: boolean; cilindrajes: boolean; picoyplaca: boolean;
@@ -102,6 +103,8 @@ function useFiltrosState(initial: Filtros): FiltrosState {
   })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const skipNextSyncRef = useRef(false)
+  const filtrosRef = useRef(filtros)
+  filtrosRef.current = filtros
 
   useEffect(() => {
     if (skipNextSyncRef.current) {
@@ -139,16 +142,30 @@ function useFiltrosState(initial: Filtros): FiltrosState {
     startTransition(() => router.replace(pathname, { scroll: false }))
   }
 
+  const flush = () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+    pushToUrl(filtrosRef.current)
+  }
+
   const toggleSec = (k: keyof typeof seccionesAbiertas) =>
     setSeccionesAbiertas(s => ({ ...s, [k]: !s[k] }))
 
-  return { filtros, update, limpiar, seccionesAbiertas, toggleSec }
+  return { filtros, update, limpiar, flush, seccionesAbiertas, toggleSec }
 }
 
-function PanelUI({ state, marcasDB }: { state: FiltrosState; marcasDB: string[] }) {
+function PanelUI({ state, marcasDB, onSubmit }: { state: FiltrosState; marcasDB: string[]; onSubmit?: () => void }) {
   const { filtros, update, limpiar, seccionesAbiertas, toggleSec } = state
   const toggleArr = (arr: string[], v: string) =>
     arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]
+  const onTextEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      onSubmit?.()
+    }
+  }
 
   const ciudadesDeProvincia = useMemo(() => {
     if (!filtros.provincia) return [] as string[]
@@ -165,6 +182,7 @@ function PanelUI({ state, marcasDB }: { state: FiltrosState; marcasDB: string[] 
         <input
           value={filtros.buscar}
           onChange={e => update({ buscar: e.target.value })}
+          onKeyDown={onTextEnter}
           style={{ width: '100%', padding: '9px 12px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', boxSizing: 'border-box' }}
           placeholder="Marca o modelo..."
         />
@@ -205,6 +223,7 @@ function PanelUI({ state, marcasDB }: { state: FiltrosState; marcasDB: string[] 
         <DosInputs
           a={filtros.precioMin} setA={(v: string) => update({ precioMin: v })} placeA="Desde"
           b={filtros.precioMax} setB={(v: string) => update({ precioMax: v })} placeB="Hasta"
+          onSubmit={onSubmit}
         />
       </Acordeon>
 
@@ -212,6 +231,7 @@ function PanelUI({ state, marcasDB }: { state: FiltrosState; marcasDB: string[] 
         <DosInputs
           a={filtros.anioMin} setA={(v: string) => update({ anioMin: v })} placeA="Desde"
           b={filtros.anioMax} setB={(v: string) => update({ anioMax: v })} placeB="Hasta"
+          onSubmit={onSubmit}
         />
       </Acordeon>
 
@@ -294,20 +314,34 @@ function PanelUI({ state, marcasDB }: { state: FiltrosState; marcasDB: string[] 
 type Props = {
   initial: Filtros
   marcasDB: string[]
+  totalCount: number
+}
+
+function scrollToResults() {
+  if (typeof document === 'undefined') return
+  document.getElementById('resultados')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 /**
  * Sidebar sticky con filtros. Visible solo desktop (hidden via CSS en mobile).
  * Lee y escribe filtros en el querystring de la URL.
  */
-export function FiltrosSidebar({ initial, marcasDB }: Props) {
+export function FiltrosSidebar({ initial, marcasDB, totalCount }: Props) {
   const state = useFiltrosState(initial)
+  const onEnterSubmit = () => {
+    state.flush()
+    scrollToResults()
+  }
   return (
     <aside
       className="filtros-sidebar"
       style={{ position: 'sticky', top: '86px' }}
     >
-      <PanelUI state={state} marcasDB={marcasDB} />
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px', padding: '0 2px' }}>
+        <span style={{ fontSize: '15px', fontWeight: 800, color: '#1E2340' }}>Filtros</span>
+        <span style={{ fontSize: '12px', color: '#888', fontWeight: 500 }}>· {totalCount} motos</span>
+      </div>
+      <PanelUI state={state} marcasDB={marcasDB} onSubmit={onEnterSubmit} />
       <style jsx>{`
         @media (max-width: 768px) {
           .filtros-sidebar { display: none !important; }
@@ -322,9 +356,15 @@ export function FiltrosSidebar({ initial, marcasDB }: Props) {
  * Visible solo mobile. Instancia independiente de la sidebar pero sincronizada
  * a traves de la URL.
  */
-export function FiltrosMobileButton({ initial, marcasDB }: Props) {
+export function FiltrosMobileButton({ initial, marcasDB, totalCount }: Props) {
   const state = useFiltrosState(initial)
   const [open, setOpen] = useState(false)
+
+  const goToResults = () => {
+    state.flush()
+    setOpen(false)
+    scrollToResults()
+  }
 
   return (
     <>
@@ -337,8 +377,8 @@ export function FiltrosMobileButton({ initial, marcasDB }: Props) {
       </button>
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}>
-          <div style={{ width: '85%', maxWidth: 'min(360px, 100vw)', background: '#f4f4f4', height: '100%', overflowY: 'auto', overflowX: 'hidden', padding: '16px', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div style={{ width: '85%', maxWidth: 'min(360px, 100vw)', background: '#f4f4f4', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', flexShrink: 0 }}>
               <div style={{ fontSize: '16px', fontWeight: 800, color: '#1E2340' }}>Filtros</div>
               <button
                 onClick={() => setOpen(false)}
@@ -347,12 +387,14 @@ export function FiltrosMobileButton({ initial, marcasDB }: Props) {
                 ✕
               </button>
             </div>
-            <PanelUI state={state} marcasDB={marcasDB} />
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 16px 16px' }}>
+              <PanelUI state={state} marcasDB={marcasDB} onSubmit={goToResults} />
+            </div>
             <button
-              onClick={() => setOpen(false)}
-              style={{ width: '100%', marginTop: '14px', padding: '14px', background: '#E8390E', color: 'white', border: 'none', borderRadius: '4px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
+              onClick={goToResults}
+              style={{ width: '100%', height: '56px', background: '#E8390E', color: 'white', border: 'none', borderRadius: 0, fontSize: '15px', fontWeight: 800, cursor: 'pointer', flexShrink: 0, textAlign: 'center' }}
             >
-              Aplicar
+              Ver {totalCount} motos
             </button>
           </div>
         </div>
@@ -420,18 +462,26 @@ function Acordeon({ titulo, abierto, onToggle, children }: { titulo: string; abi
   )
 }
 
-function DosInputs({ a, setA, placeA, b, setB, placeB }: { a: string; setA: (v: string) => void; placeA: string; b: string; setB: (v: string) => void; placeB: string }) {
+function DosInputs({ a, setA, placeA, b, setB, placeB, onSubmit }: { a: string; setA: (v: string) => void; placeA: string; b: string; setB: (v: string) => void; placeB: string; onSubmit?: () => void }) {
+  const onEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      onSubmit?.()
+    }
+  }
   return (
     <div style={{ display: 'flex', gap: '6px' }}>
       <input
         value={a}
         onChange={e => setA(e.target.value.replace(/\D/g, ''))}
+        onKeyDown={onEnter}
         placeholder={placeA}
         style={{ flex: 1, padding: '8px 10px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
       />
       <input
         value={b}
         onChange={e => setB(e.target.value.replace(/\D/g, ''))}
+        onKeyDown={onEnter}
         placeholder={placeB}
         style={{ flex: 1, padding: '8px 10px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
       />

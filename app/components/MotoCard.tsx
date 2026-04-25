@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { calcularPicoYPlaca } from '@/lib/picoyplaca'
 
 type MotoLike = {
   id: string
@@ -15,9 +16,14 @@ type MotoLike = {
   destacado?: boolean
   destacadoHasta?: string | Date | null
   esElectrica?: boolean
+  placa?: string | null
 }
 
-export default function MotoCard({ l }: { l: MotoLike }) {
+const DIA_LABEL: Record<number, string> = {
+  1: 'lunes', 2: 'martes', 3: 'miércoles', 4: 'jueves', 5: 'viernes',
+}
+
+export default function MotoCard({ l, diaSeleccionado }: { l: MotoLike; diaSeleccionado?: string | number | null }) {
   const fotos = (() => {
     try {
       return JSON.parse(l.fotos || '[]')
@@ -28,6 +34,14 @@ export default function MotoCard({ l }: { l: MotoLike }) {
   const href = '/motos/' + (l.slug || l.id)
   const ubicacion = l.provincia ? `${l.ciudad}, ${l.provincia}` : l.ciudad
   const isDestacado = !!l.destacadoHasta && new Date(l.destacadoHasta).getTime() > Date.now()
+  const diaNum = diaSeleccionado != null && diaSeleccionado !== '' ? Number(diaSeleccionado) : NaN
+  const pypBadge = (() => {
+    if (!Number.isFinite(diaNum) || diaNum < 1 || diaNum > 5) return null
+    const info = calcularPicoYPlaca(l.placa || '', l.ciudad || '', l.esElectrica)
+    if (info.esElectrica) return '⚡ Eléctrica sin restricción'
+    if (!info.aplica) return '✓ Sin restricción'
+    return `✓ Circula ${DIA_LABEL[diaNum]}`
+  })()
   return (
     <Link href={href} style={{ textDecoration: 'none' }}>
       <div
@@ -91,6 +105,24 @@ export default function MotoCard({ l }: { l: MotoLike }) {
               }}
             >
               ⚡ ELÉCTRICA
+            </div>
+          )}
+          {pypBadge && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 6,
+                left: 6,
+                background: '#ECFDF5',
+                color: '#065F46',
+                border: '1px solid #10B981',
+                fontSize: '10px',
+                fontWeight: 700,
+                padding: '3px 7px',
+                borderRadius: '3px',
+              }}
+            >
+              {pypBadge}
             </div>
           )}
         </div>
