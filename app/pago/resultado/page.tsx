@@ -130,14 +130,31 @@ function ResultadoContent() {
   }
 
   if (status === 'cancelled') {
+    // Mensaje diferenciado segun el reason que pone /api/pagos/confirmar
+    // (mapPayphoneStatus en lib/payphone.ts).
+    //   user_rejected: cancelacion pre-autorizacion -> sin cargo real.
+    //   post_auth_cancel_or_reverso: PayPhone canceló con authorizationCode
+    //     populated. Puede haber habido cobro real revertido, o un hold
+    //     pre-3DS que se libera solo. Mensaje conservador.
+    let cancelledMsg: string
+    if (reason === 'user_rejected') {
+      cancelledMsg = 'Cancelaste el pago. No se realizó ningún cargo en tu cuenta. Puedes intentar de nuevo cuando quieras.'
+    } else if (reason === 'post_auth_cancel_or_reverso') {
+      cancelledMsg = 'Tu pago fue cancelado. Si viste un cargo en tu banco, se revertirá automáticamente en los próximos días. Si no se revierte en 7 días, contáctanos en info@motopatio.com con tu número de transacción.'
+    } else {
+      cancelledMsg = 'Tu pago fue cancelado. Si viste un cargo en tu banco, se revertirá automáticamente en los próximos días. Si no se revierte en 7 días, contáctanos en info@motopatio.com con tu número de transacción.'
+    }
     return (
       <div style={{ minHeight: '100vh', background: '#f4f4f4', padding: '20px' }}>
         <div style={box}>
           <div style={{ fontSize: '56px', marginBottom: '8px' }}>🚫</div>
           <div style={{ ...title, color: '#d97706' }}>Pago cancelado</div>
-          <div style={msg}>
-            Cancelaste el pago antes de completarlo. No se realizó ningún cargo en tu cuenta. Puedes intentar nuevamente cuando quieras.
-          </div>
+          <div style={msg}>{cancelledMsg}</div>
+          {paymentId && (
+            <div style={{ ...msg, fontSize: '11px', color: '#888' }}>
+              Referencia: {paymentId}
+            </div>
+          )}
           <Link href={paymentId ? ((goesToMisMotos ? "/mis-motos?retry=" : "/publicar?retry=") + paymentId) : (goesToMisMotos ? "/mis-motos" : "/publicar")} style={btnPrimary}>Intentar de nuevo</Link>
           <Link href="/" style={btnSecondary}>Ir al inicio</Link>
         </div>
@@ -153,6 +170,7 @@ function ResultadoContent() {
     nodraft: 'Tu pago fue aprobado pero perdimos los datos de la moto. Contáctanos urgente.',
     noplan: 'Tu pago fue aprobado pero hubo un problema con el plan. Contáctanos urgente.',
     pending: 'Tu pago está siendo procesado. Te enviaremos un correo en cuanto tengamos la respuesta final, o puedes volver más tarde a revisar.',
+    unknown: 'Estamos verificando el estado de tu pago con PayPhone. Si te cobraron, activaremos tu plan automáticamente en los próximos minutos. Puedes revisar el estado en /mis-motos.',
   }
 
   return (
