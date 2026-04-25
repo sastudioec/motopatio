@@ -22,6 +22,9 @@ function MisMotosContent() {
   const [mejorarLoading, setMejorarLoading] = useState<string | null>(null)
   const [mejorarError, setMejorarError] = useState<string | null>(null)
   const [mejorarOpened, setMejorarOpened] = useState(false)
+  // Plan elegido por el usuario en el modal de "Mejorar plan" (planTipo='gratis').
+  // null = ninguna card seleccionada todavia. Se resetea al cerrar el modal.
+  const [targetPlan, setTargetPlan] = useState<'basico' | 'full' | null>(null)
   const [retryHandled, setRetryHandled] = useState(false)
   const [paidPlansEnabled, setPaidPlansEnabled] = useState(true)
 
@@ -369,9 +372,13 @@ function MisMotosContent() {
           <div style={{background:'#fff',borderRadius:'12px',padding:'clamp(16px, 4vw, 32px)',maxWidth:'480px',width:'100%',maxHeight:'calc(100vh - 40px)',overflowY:'auto',boxSizing:'border-box'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
               <div style={{fontFamily:'Poppins,sans-serif',fontSize:'18px',fontWeight:900,color:'#1E2340'}}>
-                {modalMoto.planTipo === 'gratis' ? 'Mejorar plan' : 'Promocionar moto'}
+                {modalMoto.planTipo === 'gratis'
+                  ? (targetPlan === 'basico' ? 'Pagar Plan Básico — $5'
+                    : targetPlan === 'full' ? 'Pagar Plan Full — $10'
+                    : 'Mejorar plan')
+                  : 'Promocionar moto'}
               </div>
-              <button onClick={() => { setModalMoto(null); setDestacarError(null); setDestacarLoading(false); setDestacarOpened(false); setMejorarError(null); setMejorarLoading(null); setMejorarOpened(false) }} style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#888'}}>✕</button>
+              <button onClick={() => { setModalMoto(null); setDestacarError(null); setDestacarLoading(false); setDestacarOpened(false); setMejorarError(null); setMejorarLoading(null); setMejorarOpened(false); setTargetPlan(null) }} style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#888'}}>✕</button>
             </div>
             <div style={{fontSize:'13px',color:'#888',marginBottom:'20px'}}>
               <strong style={{color:'#1E2340'}}>{modalMoto.marca} {modalMoto.modelo}</strong> — Plan actual: <strong>{modalMoto.planTipo || 'gratis'}</strong>
@@ -382,37 +389,74 @@ function MisMotosContent() {
               </div>
             )}
             <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-              {(modalMoto.planTipo === 'gratis' || !modalMoto.planTipo) && (
-                <>
-                  <div style={{border:'1px solid #e0e0e0',borderRadius:'8px',padding:'16px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
-                      <div style={{fontWeight:700,color:'#1E2340'}}>Plan Basico</div>
-                      <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>$5</div>
+              {(modalMoto.planTipo === 'gratis' || !modalMoto.planTipo) && (() => {
+                // Cards "Mejorar plan": ambas visibles, ninguna pre-seleccionada.
+                // El estado "seleccionado" (borde grueso + fondo tenido + footer
+                // naranja) es exclusivo de la accion del usuario y NO debe
+                // confundirse con el badge "RECOMENDADO" del Full (informativo).
+                const isLocked = mejorarLoading !== null || mejorarOpened
+                const renderPlanCard = (planId: 'basico' | 'full', titulo: string, precio: string, subtitulo: string, isRecomendado: boolean) => {
+                  const selected = targetPlan === planId
+                  return (
+                    <div
+                      onClick={() => { if (!isLocked) setTargetPlan(planId) }}
+                      role="button"
+                      aria-pressed={selected}
+                      style={{
+                        border: selected ? '3px solid #E8390E' : '1px solid #e0e0e0',
+                        background: selected ? '#fff8f5' : '#fff',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        position: 'relative',
+                        cursor: isLocked ? 'default' : 'pointer',
+                        opacity: isLocked && !selected ? 0.55 : 1,
+                        transition: 'border-color 0.15s, background 0.15s',
+                      }}>
+                      {isRecomendado && (
+                        <div style={{position:'absolute',top:'-10px',left:'16px',background:'#E8390E',color:'white',fontSize:'10px',fontWeight:800,padding:'2px 10px',borderRadius:'10px',letterSpacing:'0.5px'}}>RECOMENDADO</div>
+                      )}
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
+                        <div style={{fontWeight:700,color:'#1E2340'}}>{titulo}</div>
+                        <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>{precio}</div>
+                      </div>
+                      <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>{subtitulo}</div>
+                      <div style={{
+                        width:'100%',padding:'8px',borderRadius:'4px',fontSize:'12px',fontWeight:700,
+                        textAlign:'center',textTransform:'uppercase',letterSpacing:'0.3px',
+                        background: selected ? '#E8390E' : 'transparent',
+                        color: selected ? '#fff' : '#999',
+                        border: selected ? 'none' : '1px solid #e0e0e0',
+                      }}>
+                        {selected ? '✓ Plan seleccionado' : 'Seleccionar'}
+                      </div>
                     </div>
-                    <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>15 dias activa · Hasta 8 fotos</div>
-                    <button
-                      onClick={() => handleMejorar(modalMoto.id, 'basico')}
-                      disabled={mejorarLoading !== null || mejorarOpened}
-                      style={{width:'100%',padding:'10px',background: mejorarOpened ? '#8a8a8a' : '#1E2340',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: (mejorarLoading !== null || mejorarOpened) ? 'not-allowed' : 'pointer',opacity: mejorarLoading === 'basico' ? 0.7 : 1}}>
-                      {mejorarOpened ? 'Paga abajo ↓' : mejorarLoading === 'basico' ? 'Abriendo pasarela...' : 'Pagar $5'}
-                    </button>
-                  </div>
-                  <div style={{border:'2px solid #E8390E',borderRadius:'8px',padding:'16px',position:'relative'}}>
-                    <div style={{position:'absolute',top:'-10px',left:'16px',background:'#E8390E',color:'white',fontSize:'10px',fontWeight:800,padding:'2px 10px',borderRadius:'10px'}}>RECOMENDADO</div>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
-                      <div style={{fontWeight:700,color:'#1E2340'}}>Plan Full</div>
-                      <div style={{fontFamily:'Poppins,sans-serif',fontSize:'20px',fontWeight:900,color:'#E8390E'}}>$10</div>
+                  )
+                }
+                return (
+                  <>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:'12px'}}>
+                      {renderPlanCard('basico', 'Plan Basico', '$5', '15 dias activa · Hasta 8 fotos', false)}
+                      {renderPlanCard('full', 'Plan Full', '$10', '30 dias activa · Destacado 7 dias incluido', true)}
                     </div>
-                    <div style={{fontSize:'12px',color:'#666',marginBottom:'12px'}}>30 dias activa · Destacado 7 dias incluido</div>
                     <button
-                      onClick={() => handleMejorar(modalMoto.id, 'full')}
-                      disabled={mejorarLoading !== null || mejorarOpened}
-                      style={{width:'100%',padding:'10px',background: mejorarOpened ? '#8a8a8a' : '#E8390E',color:'white',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor: (mejorarLoading !== null || mejorarOpened) ? 'not-allowed' : 'pointer',opacity: mejorarLoading === 'full' ? 0.7 : 1}}>
-                      {mejorarOpened ? 'Paga abajo ↓' : mejorarLoading === 'full' ? 'Abriendo pasarela...' : 'Pagar $10'}
+                      onClick={() => { if (targetPlan) handleMejorar(modalMoto.id, targetPlan) }}
+                      disabled={!targetPlan || isLocked}
+                      style={{
+                        width:'100%',padding:'12px',marginTop:'14px',
+                        background: !targetPlan ? '#cccccc' : (mejorarOpened ? '#8a8a8a' : '#E8390E'),
+                        color:'white',border:'none',borderRadius:'4px',fontSize:'14px',fontWeight:800,
+                        cursor: (!targetPlan || isLocked) ? 'not-allowed' : 'pointer',
+                        opacity: mejorarLoading !== null ? 0.7 : 1,
+                        textTransform:'uppercase',letterSpacing:'0.3px',
+                      }}>
+                      {mejorarOpened ? 'Paga abajo ↓'
+                        : mejorarLoading !== null ? 'Abriendo pasarela...'
+                        : !targetPlan ? 'Selecciona un plan'
+                        : `Pagar $${targetPlan === 'basico' ? '5' : '10'} con PayPhone`}
                     </button>
-                  </div>
-                </>
-              )}
+                  </>
+                )
+              })()}
               {modalMoto.planTipo === 'basico' && (
                 <>
                   {renderDestacarCard()}
