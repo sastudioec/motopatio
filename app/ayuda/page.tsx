@@ -95,7 +95,7 @@ const secciones = [
       },
       {
         q: '¿Cómo funciona la renovación automática?',
-        r: 'Los planes Básico y Full se renuevan automáticamente al finalizar su período de vigencia (15 o 30 días respectivamente). Te enviamos un correo recordatorio entre 24 y 48 horas antes de cada cobro.',
+        r: 'Los planes Básico y Full se renuevan automáticamente al finalizar su período de vigencia (15 o 30 días respectivamente). Te enviamos un correo recordatorio 3 días antes del vencimiento.',
       },
       {
         q: '¿Cómo cancelo la renovación automática?',
