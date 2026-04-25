@@ -149,11 +149,30 @@ export async function querySaleByClientTxId(
 
   const text = await res.text()
   const contentType = res.headers.get('content-type')
+
+  console.log(
+    '[PayPhone Sale/client] status=' + res.status,
+    'content-type=' + (contentType || '-'),
+    'clientTxId=' + clientTxId,
+    'bodyLen=' + text.length
+  )
+
+  // Mismo problema que en confirmTransaction: PayPhone responde HTML al
+  // Sale/client en escenarios distintos (tx muy reciente, error transitorio,
+  // etc.). NO asumir cancelacion: devolver NeedsVerification para que el
+  // caller decida (reintentar, dejar pending, etc.). El reconciliador
+  // re-consulta cada 5min y eventualmente Sale/client devuelve JSON.
   if (looksLikeHtml(text, contentType)) {
+    console.log(
+      '[PayPhone Sale/client] HTML response. ClientTxId:', clientTxId,
+      'body[0:300]=', text.slice(0, 300).replace(/\s+/g, ' ')
+    )
     return {
       clientTransactionId: clientTxId,
-      transactionStatus: 'Canceled',
-      message: 'PayPhone devolvio HTML de error; tratado como Canceled',
+      transactionStatus: 'NeedsVerification',
+      httpStatus: res.status,
+      rawHtmlBody: text.slice(0, 2000),
+      message: 'PayPhone Sale/client respondio HTML; estado real desconocido',
     } as PayPhoneConfirmResponse
   }
 
