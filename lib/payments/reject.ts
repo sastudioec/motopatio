@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { sendPagoNoCompletadoEmail } from '@/lib/emails'
+import { sendPagoNoCompletadoEmail, notifyAdmin } from '@/lib/emails'
 
 export type RejectOptions = {
   newStatus: 'rejected' | 'cancelled'
@@ -46,6 +46,29 @@ export async function handleRejectedPayment(
       confirmedAt: new Date(),
     },
   })
+
+  try {
+    const monto = (payment.amountCents / 100).toFixed(2)
+    const motivoSubject =
+      opts.errorMessage ??
+      (opts.newStatus.charAt(0).toUpperCase() + opts.newStatus.slice(1))
+    const adminBody = '<h3>Pago fallido</h3><ul>'
+      + '<li><strong>PaymentId:</strong> ' + payment.id + '</li>'
+      + '<li><strong>Monto:</strong> $' + monto + '</li>'
+      + '<li><strong>Estado:</strong> ' + opts.newStatus + '</li>'
+      + '<li><strong>Motivo:</strong> ' + (opts.errorMessage || '-') + '</li>'
+      + '<li><strong>Concept:</strong> ' + payment.concept + '</li>'
+      + '<li><strong>Usuario:</strong> ' + (payment.user.name || 'Usuario') + '</li>'
+      + '<li><strong>Email:</strong> ' + payment.user.email + '</li>'
+      + '<li><strong>ListingId:</strong> ' + (payment.listingId || '-') + '</li>'
+      + '</ul>'
+    await notifyAdmin(
+      '[MotoPatio][Pago Error] $' + monto + ' - ' + payment.user.email + ' - ' + motivoSubject,
+      adminBody
+    )
+  } catch (e) {
+    console.error('[notifyAdmin] pago fallido:', e)
+  }
 
   if (opts.sendEmail) {
     const md = payment.metadata as Record<string, unknown> | null

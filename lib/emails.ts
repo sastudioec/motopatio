@@ -159,3 +159,14 @@ export async function sendMotoPublicadaEmail(to: string, name: string, moto: { t
   const body = '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">¡Tu moto está publicada!</h2><p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, tu anuncio ya está visible en Ecuador.</p><div style="background:#f9f9fb;border-radius:8px;padding:16px 20px;margin:16px 0;border-left:4px solid #e8572a;"><p style="margin:0 0 4px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Tu anuncio</p><p style="margin:0;font-size:17px;font-weight:700;color:#1a1f36;">' + moto.titulo + '</p><p style="margin:4px 0 0;font-size:20px;font-weight:800;color:#e8572a;">' + precio + '</p><p style="margin:12px 0 0;font-size:13px;color:#52525b;">Tu código de referencia: <strong style="font-family:monospace;color:#1a1f36;letter-spacing:0.5px;">' + moto.publicId + '</strong></p><p style="margin:4px 0 0;font-size:12px;color:#a1a1aa;">Úsalo cuando nos escribas por WhatsApp para soporte.</p></div>' + btn(BASE + '/motos/' + moto.slug, 'Ver mi anuncio')
   return resend.emails.send({ from: 'MotoPatio <noreply@motopatio.com>', to, subject: 'Tu moto "' + moto.titulo + '" ya está publicada ✅', html: wrap(body) })
 }
+
+const ADMIN_EMAIL = 'info@motopatio.com'
+
+export async function notifyAdmin(subject: string, body: string): Promise<void> {
+  await resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to: ADMIN_EMAIL,
+    subject,
+    html: body,
+  })
+}

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendWelcomeEmail } from '@/lib/emails'
+import { sendWelcomeEmail, notifyAdmin } from '@/lib/emails'
 
 export async function GET(request: Request) {
   try {
@@ -35,6 +35,19 @@ export async function GET(request: Request) {
       await sendWelcomeEmail(user.email, user.name || 'usuario')
     } catch(e) {
       console.error('Welcome email error:', e)
+    }
+
+    try {
+      const nombre = user.name || 'usuario'
+      const adminBody = '<h3>Nuevo usuario verificado</h3><ul>'
+        + '<li><strong>Nombre:</strong> ' + nombre + '</li>'
+        + '<li><strong>Email:</strong> ' + user.email + '</li>'
+        + '<li><strong>Provider:</strong> credentials</li>'
+        + '<li><strong>Verificado:</strong> sí</li>'
+        + '</ul>'
+      await notifyAdmin('[MotoPatio][Usuario] Nuevo: ' + nombre + ' (' + user.email + ')', adminBody)
+    } catch (e) {
+      console.error('[notifyAdmin] usuario credentials:', e)
     }
 
     return NextResponse.redirect('https://motopatio.com/auth/login?verified=1')

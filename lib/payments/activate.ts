@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { getPlanById, calcExpiresAt, calcFeaturedUntil } from '@/lib/plans'
-import { sendMotoPublicadaEmail, sendDestacadoActivadoEmail, sendPlanMejoradoEmail } from '@/lib/emails'
+import { sendMotoPublicadaEmail, sendDestacadoActivadoEmail, sendPlanMejoradoEmail, notifyAdmin } from '@/lib/emails'
 import { buildListingSlug } from '@/lib/slug'
 import { generateListingPublicId } from '@/lib/public-id'
 
@@ -179,6 +179,43 @@ async function activatePlanPayment(
     console.error('[activatePayment] email error:', e)
   }
 
+  try {
+    const titulo = draft.marca + ' ' + draft.modelo
+    const slugVal = listing.slug || listing.id
+    const precio = parseInt(String(draft.precio)) || 0
+    const adminBody = '<h3>Nueva moto publicada</h3><ul>'
+      + '<li><strong>Título:</strong> ' + titulo + '</li>'
+      + '<li><strong>Plan:</strong> ' + plan.id + '</li>'
+      + '<li><strong>Precio:</strong> $' + precio + '</li>'
+      + '<li><strong>Ciudad:</strong> ' + draft.ciudad + '</li>'
+      + '<li><strong>Usuario:</strong> ' + (payment.user.name || 'Usuario') + '</li>'
+      + '<li><strong>Email:</strong> ' + payment.user.email + '</li>'
+      + '<li><strong>Link:</strong> <a href="https://motopatio.com/motos/' + slugVal + '">https://motopatio.com/motos/' + slugVal + '</a></li>'
+      + '<li><strong>PublicId:</strong> ' + publicId + '</li>'
+      + '<li><strong>PaymentId:</strong> ' + payment.id + '</li>'
+      + '</ul>'
+    await notifyAdmin('[MotoPatio][Moto] Nueva: ' + titulo + ' [' + plan.id + ']', adminBody)
+  } catch (e) {
+    console.error('[notifyAdmin] moto pagada:', e)
+  }
+
+  try {
+    const monto = (payment.amountCents / 100).toFixed(2)
+    const adminBody = '<h3>Pago aprobado</h3><ul>'
+      + '<li><strong>PaymentId:</strong> ' + payment.id + '</li>'
+      + '<li><strong>Monto:</strong> $' + monto + '</li>'
+      + '<li><strong>Concept:</strong> plan</li>'
+      + '<li><strong>Plan:</strong> ' + plan.name + '</li>'
+      + '<li><strong>Usuario:</strong> ' + (payment.user.name || 'Usuario') + '</li>'
+      + '<li><strong>Email:</strong> ' + payment.user.email + '</li>'
+      + '<li><strong>TransactionId:</strong> ' + (payment.payphoneTransactionId || '-') + '</li>'
+      + '<li><strong>ListingId:</strong> ' + listing.id + '</li>'
+      + '</ul>'
+    await notifyAdmin('[MotoPatio][Pago OK] $' + monto + ' - ' + payment.user.email, adminBody)
+  } catch (e) {
+    console.error('[notifyAdmin] pago aprobado plan:', e)
+  }
+
   return { status: 'activated', listingId: listing.id }
 }
 
@@ -230,6 +267,23 @@ async function activateFeaturedPayment(
     })
   } catch (e) {
     console.error('[activatePayment] email featured error:', e)
+  }
+
+  try {
+    const monto = (payment.amountCents / 100).toFixed(2)
+    const adminBody = '<h3>Pago aprobado</h3><ul>'
+      + '<li><strong>PaymentId:</strong> ' + payment.id + '</li>'
+      + '<li><strong>Monto:</strong> $' + monto + '</li>'
+      + '<li><strong>Concept:</strong> featured</li>'
+      + '<li><strong>FeaturedDays:</strong> ' + days + '</li>'
+      + '<li><strong>Usuario:</strong> ' + (payment.user.name || 'Usuario') + '</li>'
+      + '<li><strong>Email:</strong> ' + payment.user.email + '</li>'
+      + '<li><strong>TransactionId:</strong> ' + (payment.payphoneTransactionId || '-') + '</li>'
+      + '<li><strong>ListingId:</strong> ' + payment.listingId + '</li>'
+      + '</ul>'
+    await notifyAdmin('[MotoPatio][Pago OK] $' + monto + ' - ' + payment.user.email, adminBody)
+  } catch (e) {
+    console.error('[notifyAdmin] pago aprobado featured:', e)
   }
 
   return { status: 'activated', listingId: payment.listingId }
@@ -316,6 +370,23 @@ async function activateUpgradePayment(
     })
   } catch (e) {
     console.error('[activatePayment] email upgrade error:', e)
+  }
+
+  try {
+    const monto = (payment.amountCents / 100).toFixed(2)
+    const adminBody = '<h3>Pago aprobado</h3><ul>'
+      + '<li><strong>PaymentId:</strong> ' + payment.id + '</li>'
+      + '<li><strong>Monto:</strong> $' + monto + '</li>'
+      + '<li><strong>Concept:</strong> upgrade</li>'
+      + '<li><strong>Plan destino:</strong> ' + targetPlan.name + '</li>'
+      + '<li><strong>Usuario:</strong> ' + (payment.user.name || 'Usuario') + '</li>'
+      + '<li><strong>Email:</strong> ' + payment.user.email + '</li>'
+      + '<li><strong>TransactionId:</strong> ' + (payment.payphoneTransactionId || '-') + '</li>'
+      + '<li><strong>ListingId:</strong> ' + payment.listingId + '</li>'
+      + '</ul>'
+    await notifyAdmin('[MotoPatio][Pago OK] $' + monto + ' - ' + payment.user.email, adminBody)
+  } catch (e) {
+    console.error('[notifyAdmin] pago aprobado upgrade:', e)
   }
 
   return { status: 'activated', listingId: payment.listingId }

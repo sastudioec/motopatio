@@ -4,7 +4,7 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import type { NextAuthOptions } from 'next-auth'
-import { sendWelcomeEmail } from '@/lib/emails'
+import { sendWelcomeEmail, notifyAdmin } from '@/lib/emails'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -40,6 +40,20 @@ export const authOptions: NextAuthOptions = {
         }
       } catch (e) {
         console.error('Email bienvenida error:', e)
+      }
+      if (user.email) {
+        try {
+          const nombre = user.name || 'usuario'
+          const adminBody = '<h3>Nuevo usuario</h3><ul>'
+            + '<li><strong>Nombre:</strong> ' + nombre + '</li>'
+            + '<li><strong>Email:</strong> ' + user.email + '</li>'
+            + '<li><strong>Provider:</strong> google</li>'
+            + '<li><strong>Verificado:</strong> sí</li>'
+            + '</ul>'
+          await notifyAdmin('[MotoPatio][Usuario] Nuevo: ' + nombre + ' (' + user.email + ')', adminBody)
+        } catch (e) {
+          console.error('[notifyAdmin] usuario google:', e)
+        }
       }
     }
   },

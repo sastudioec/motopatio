@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { sendMotoPublicadaEmail } from '@/lib/emails'
+import { sendMotoPublicadaEmail, notifyAdmin } from '@/lib/emails'
 import {
   getPlanById,
   canPublishFreePlan,
@@ -144,6 +144,25 @@ export async function POST(req: NextRequest) {
     )
   } catch (e) {
     console.error('Email error:', e)
+  }
+
+  try {
+    const titulo = body.marca + ' ' + body.modelo
+    const slugVal = (listing as any).slug || listing.id
+    const precio = parseInt(body.precio) || 0
+    const adminBody = '<h3>Nueva moto publicada</h3><ul>'
+      + '<li><strong>Título:</strong> ' + titulo + '</li>'
+      + '<li><strong>Plan:</strong> ' + plan.id + '</li>'
+      + '<li><strong>Precio:</strong> $' + precio + '</li>'
+      + '<li><strong>Ciudad:</strong> ' + body.ciudad + '</li>'
+      + '<li><strong>Usuario:</strong> ' + (user.name || 'Usuario') + '</li>'
+      + '<li><strong>Email:</strong> ' + user.email + '</li>'
+      + '<li><strong>Link:</strong> <a href="https://motopatio.com/motos/' + slugVal + '">https://motopatio.com/motos/' + slugVal + '</a></li>'
+      + '<li><strong>PublicId:</strong> ' + publicId + '</li>'
+      + '</ul>'
+    await notifyAdmin('[MotoPatio][Moto] Nueva: ' + titulo + ' [' + plan.id + ']', adminBody)
+  } catch (e) {
+    console.error('[notifyAdmin] moto gratis:', e)
   }
 
   return NextResponse.json({ ok: true, listing })
