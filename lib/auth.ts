@@ -57,6 +57,14 @@ export const authOptions: NextAuthOptions = {
           console.error('[notifyAdmin] usuario google:', e)
         }
       }
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerified: new Date() },
+        })
+      } catch (e) {
+        console.error('[createUser] emailVerified update error:', e)
+      }
     }
   },
   callbacks: {
