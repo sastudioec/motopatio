@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import type { NextAuthOptions } from 'next-auth'
 import { sendWelcomeEmail, notifyAdmin } from '@/lib/emails'
+import { cookies } from 'next/headers'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -12,6 +13,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      authorization: { params: { prompt: 'select_account' } },
     }),
     CredentialsProvider({
       name: 'credentials',
@@ -31,7 +33,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: { strategy: 'jwt' },
-  pages: { signIn: '/auth/login' },
+  pages: { signIn: '/auth/login', error: '/auth/error' },
   events: {
     async createUser({ user }) {
       try {
@@ -58,6 +60,29 @@ export const authOptions: NextAuthOptions = {
     }
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== 'google') return true
+      const cookieStore = await cookies()
+      const intent = cookieStore.get('mp_intent')?.value
+      const email = profile?.email || user.email
+      if (!email) return true
+      const existing = await prisma.user.findUnique({
+        where: { email },
+        include: { accounts: { select: { provider: true } } },
+      })
+      const hasGoogle = !!existing?.accounts.some(a => a.provider === 'google')
+      const hasPassword = !!existing?.password
+      if (intent === 'signup') {
+        if (existing) return '/auth/error?reason=signup_email_exists'
+        return true
+      }
+      if (intent === 'signin') {
+        if (!existing) return '/auth/error?reason=signin_no_account'
+        if (!hasGoogle && hasPassword) return '/auth/error?reason=signin_credentials_only'
+        return true
+      }
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role
