@@ -40,6 +40,7 @@ function PublicarContent() {
 
   // --- Planes ---
   const [plans, setPlans] = useState<PlanCatalog[]>([])
+  const [paidPlansEnabled, setPaidPlansEnabled] = useState(true)
   const [brands, setBrands] = useState<{id:string,name:string,slug:string}[]>([])
   const [models, setModels] = useState<{id:string,name:string,slug:string}[]>([])
   const [brandsLoading, setBrandsLoading] = useState(true)
@@ -58,6 +59,7 @@ function PublicarContent() {
       .then(r => r.json())
       .then(d => {
         setPlans(d.plans || [])
+        setPaidPlansEnabled(d.paidPlansEnabled !== false)
         setPlansLoading(false)
       })
       .catch(() => setPlansLoading(false))
@@ -548,16 +550,22 @@ function PublicarContent() {
     return (
       <div style={{background:'#fff',borderRadius:'8px',padding:'28px',border:'1px solid #e8e8e8',marginBottom:'20px'}}>
         <div style={{fontSize:'14px',fontWeight:800,color:'#1E2340',textTransform:'uppercase',marginBottom:'8px'}}>Elige tu plan</div>
+        {!paidPlansEnabled && (
+          <div style={{background:'#fff7ed',border:'1px solid #fed7aa',color:'#c2410c',padding:'10px 14px',borderRadius:'6px',fontSize:'13px',marginBottom:'14px',lineHeight:1.5}}>
+            📢 Planes Básico y Full disponibles próximamente. Por ahora puedes publicar gratis.
+          </div>
+        )}
         <div style={{fontSize:'13px',color:'#666',marginBottom:'20px'}}>Escoge cómo quieres publicar tu moto. Todos los planes son pagos únicos, sin suscripciones.</div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'14px'}}>
           {plans.map(plan => {
             const copy = getPlanCopy(plan)
             const isPopular = !!copy.badge
             const isGratis = plan.id === 'gratis'
+            const isPaidBlocked = !paidPlansEnabled && plan.priceCents > 0
             const freeActiveBlock = isGratis && hasFreeActive
             const freeCooldownBlock = isGratis && !hasFreeActive && freeCooldownDays > 0
             const freeBlocked = freeActiveBlock || freeCooldownBlock
-            const planDisabled = blocked || isLoadingVerif || freeBlocked
+            const planDisabled = blocked || isLoadingVerif || freeBlocked || isPaidBlocked
             return (
               <div key={plan.id}
                 style={{
@@ -565,9 +573,9 @@ function PublicarContent() {
                   borderRadius:'8px', padding:'20px', position:'relative',
                   background: isPopular ? '#fff8f5' : '#fff',
                   display:'flex', flexDirection:'column',
-                  opacity: freeBlocked ? 0.55 : 1,
+                  opacity: (freeBlocked || isPaidBlocked) ? 0.5 : 1,
                 }}>
-                {copy.badge && (
+                {copy.badge && !isPaidBlocked && (
                   <div style={{position:'absolute',top:'-10px',right:'16px',background:'#E8390E',color:'#fff',fontSize:'10px',fontWeight:800,padding:'4px 10px',borderRadius:'4px',textTransform:'uppercase',letterSpacing:'0.5px'}}>
                     {copy.badge}
                   </div>
@@ -593,20 +601,32 @@ function PublicarContent() {
                     <li key={f} style={{color:'#aaa'}}>✗ {f}</li>
                   ))}
                 </ul>
-                <button
-                  onClick={() => setSelectedPlan(plan)}
-                  disabled={planDisabled}
-                  style={{
+                {isPaidBlocked ? (
+                  <div style={{
                     width:'100%', padding:'11px',
-                    background: isPopular ? '#E8390E' : '#1E2340',
-                    color:'#fff', border:'none', borderRadius:'4px',
-                    fontSize:'13px', fontWeight:800,
-                    cursor: planDisabled ? 'not-allowed' : 'pointer',
-                    textTransform:'uppercase',
-                    opacity: planDisabled ? 0.5 : 1,
+                    background:'#E8390E', color:'#fff',
+                    borderRadius:'4px', fontSize:'13px', fontWeight:800,
+                    textAlign:'center', textTransform:'uppercase',
+                    letterSpacing:'0.5px', cursor:'not-allowed',
                   }}>
-                  {getPlanCtaLabel(plan)}
-                </button>
+                    PRÓXIMAMENTE
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSelectedPlan(plan)}
+                    disabled={planDisabled}
+                    style={{
+                      width:'100%', padding:'11px',
+                      background: isPopular ? '#E8390E' : '#1E2340',
+                      color:'#fff', border:'none', borderRadius:'4px',
+                      fontSize:'13px', fontWeight:800,
+                      cursor: planDisabled ? 'not-allowed' : 'pointer',
+                      textTransform:'uppercase',
+                      opacity: planDisabled ? 0.5 : 1,
+                    }}>
+                    {getPlanCtaLabel(plan)}
+                  </button>
+                )}
                 {freeActiveBlock && (
                   <div style={{fontSize:'11px',color:'#666',marginTop:'8px',lineHeight:1.4}}>
                     Ya tienes un anuncio gratuito activo. Espera a que expire, o elige Básico o Full.

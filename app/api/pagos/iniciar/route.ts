@@ -26,6 +26,10 @@ type BodyData = {
 }
 
 export async function POST(req: NextRequest) {
+  if (process.env.PAID_PLANS_ENABLED !== 'true') {
+    return NextResponse.json({ error: 'paid_plans_disabled' }, { status: 503 })
+  }
+
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })

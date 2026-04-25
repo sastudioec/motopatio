@@ -7,7 +7,10 @@ export async function GET() {
     // 'featured' es un add-on, no parte del catalogo de planes de publicacion.
     // Se consulta directo por id desde /api/pagos/destacar.
     const publicPlans = plans.filter((p) => p.id !== 'featured')
-    return NextResponse.json({ plans: publicPlans })
+    return NextResponse.json({
+      plans: publicPlans,
+      paidPlansEnabled: process.env.PAID_PLANS_ENABLED === 'true',
+    })
   } catch (e) {
     console.error('Error obteniendo planes:', e)
     return NextResponse.json(

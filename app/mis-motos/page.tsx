@@ -23,6 +23,14 @@ function MisMotosContent() {
   const [mejorarError, setMejorarError] = useState<string | null>(null)
   const [mejorarOpened, setMejorarOpened] = useState(false)
   const [retryHandled, setRetryHandled] = useState(false)
+  const [paidPlansEnabled, setPaidPlansEnabled] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/plans')
+      .then(r => r.json())
+      .then(d => setPaidPlansEnabled(d.paidPlansEnabled !== false))
+      .catch(() => setPaidPlansEnabled(true))
+  }, [])
 
   const handleDestacar = async (listingId: string) => {
     setDestacarError(null)
@@ -275,16 +283,32 @@ function MisMotosContent() {
                               </button>
                             )}
                             {planTipo !== 'gratis' && (
-                              <button onClick={() => setModalMoto(moto)}
-                                style={{background:'#EEF2FF',color:'#4338CA',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
-                                ⭐ Promocionar
-                              </button>
+                              paidPlansEnabled ? (
+                                <button onClick={() => setModalMoto(moto)}
+                                  style={{background:'#EEF2FF',color:'#4338CA',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
+                                  ⭐ Promocionar
+                                </button>
+                              ) : (
+                                <button disabled
+                                  title="Pagos en mantenimiento. Disponible próximamente."
+                                  style={{background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'not-allowed',opacity:0.7}}>
+                                  ⭐ Próximamente
+                                </button>
+                              )
                             )}
                             {planTipo === 'gratis' && (
-                              <button onClick={() => setModalMoto(moto)}
-                                style={{background:'#FFF3E0',color:'#B45309',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
-                                🚀 Mejorar plan
-                              </button>
+                              paidPlansEnabled ? (
+                                <button onClick={() => setModalMoto(moto)}
+                                  style={{background:'#FFF3E0',color:'#B45309',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
+                                  🚀 Mejorar plan
+                                </button>
+                              ) : (
+                                <button disabled
+                                  title="Pagos en mantenimiento. Disponible próximamente."
+                                  style={{background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'not-allowed',opacity:0.7}}>
+                                  🚀 Próximamente
+                                </button>
+                              )
                             )}
                             <button onClick={() => handleEliminar(moto.id)} disabled={disabled}
                               style={{background:'#FCEBEB',color:'#A32D2D',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor: disabled ? 'not-allowed' : 'pointer'}}>
