@@ -151,9 +151,32 @@ const secciones = [
   },
 ]
 
+// FAQPage schema para Google Rich Results.
+// Aplana la jerarquia de secciones en una lista plana de preguntas: el
+// schema FAQPage no soporta agrupacion, solo mainEntity[] con Question.
+// La pagina visible mantiene la jerarquia visual.
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: secciones.flatMap((sec) =>
+    sec.preguntas.map((p) => ({
+      '@type': 'Question',
+      name: p.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: p.r,
+      },
+    }))
+  ),
+}
+
 export default function AyudaPage() {
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <div style={{background:'#f4f4f4',padding:'40px 20px'}}>
         <div style={{maxWidth:'860px',margin:'0 auto',background:'#fff',borderRadius:'10px',padding:'40px 44px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)'}}>
 
