@@ -33,7 +33,7 @@ export function getPlanCopy(plan: PlanForCopy): PlanCopy {
         { text: `Hasta ${plan.maxPhotos} fotos` },
         { text: 'Visible en catálogo' },
       ],
-      noFeatures: ['Sin destacado', 'Sin renovación automática'],
+      noFeatures: ['Sin destacado'],
       badge: null,
     }
   }

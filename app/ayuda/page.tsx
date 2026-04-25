@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Centro de ayuda y preguntas frecuentes',
-  description: 'Preguntas frecuentes sobre MotoPatío: cómo publicar anuncios, planes, pagos, renovaciones, cuenta y más.',
+  description: 'Preguntas frecuentes sobre MotoPatío: cómo publicar anuncios, planes, pagos, vigencia, cuenta y más.',
   alternates: { canonical: 'https://motopatio.com/ayuda' },
   openGraph: {
     type: 'website',
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     siteName: 'MotoPatío',
     url: 'https://motopatio.com/ayuda',
     title: 'Centro de ayuda | MotoPatío',
-    description: 'Preguntas frecuentes: cómo publicar, planes, pagos, renovaciones y cuenta.',
+    description: 'Preguntas frecuentes: cómo publicar, planes, pagos, vigencia y cuenta.',
     images: [{ url: '/og-default.jpg', width: 1200, height: 630, alt: 'MotoPatío — Centro de ayuda' }],
   },
   twitter: {
@@ -87,23 +87,15 @@ const secciones = [
     ],
   },
   {
-    titulo: 'Pagos y renovaciones',
+    titulo: 'Pagos y vigencia',
     preguntas: [
       {
         q: '¿Qué métodos de pago aceptan?',
         r: 'Procesamos los pagos a través de PayPhone, pasarela certificada ecuatoriana. Aceptamos tarjetas de crédito y débito Visa, Mastercard y Diners Club de cualquier banco ecuatoriano. No necesitas descargar ninguna app: el pago se realiza directamente desde el sitio web ingresando los datos de tu tarjeta.',
       },
       {
-        q: '¿Cómo funciona la renovación automática?',
-        r: 'Los planes Básico y Full se renuevan automáticamente al finalizar su período de vigencia (15 o 30 días respectivamente). Te enviamos un correo recordatorio 3 días antes del vencimiento.',
-      },
-      {
-        q: '¿Cómo cancelo la renovación automática?',
-        r: 'Ingresa a Mi perfil → Mis publicaciones → selecciona el anuncio → haz clic en "Cancelar renovación automática". La cancelación debe realizarse al menos 24 horas antes de la fecha de renovación programada.',
-      },
-      {
-        q: '¿Qué pasa cuando cancelo la renovación?',
-        r: 'Tu anuncio permanece activo hasta completar el período ya pagado. No se realizan cobros posteriores y expira normalmente al finalizar su vigencia. No se emiten reembolsos proporcionales por días no consumidos.',
+        q: '¿Qué pasa cuando se cumple el plazo de mi publicación?',
+        r: 'Al vencer el plazo de tu plan (15 días en Básico, 30 días en Full), la publicación se desactiva automáticamente. Te enviamos un correo recordatorio 3 días antes del vencimiento. Si no has vendido tu moto, puedes volver a publicarla manualmente desde "Mis publicaciones" eligiendo un nuevo plan y haciendo un nuevo pago único.',
       },
       {
         q: '¿Puedo solicitar un reembolso?',
