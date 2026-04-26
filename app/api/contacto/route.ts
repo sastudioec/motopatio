@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { sendContactoConfirmacion } from '@/lib/emails'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -101,20 +102,40 @@ export async function POST(req: Request) {
       '</p></div>' +
       '</td></tr></table></td></tr></table></body></html>'
 
-    const result = await resend.emails.send({
-      from: 'MotoPatio Contacto <noreply@motopatio.com>',
-      to: 'info@motopatio.com',
-      replyTo: email,
-      subject: '[Contacto] ' + (asunto || 'Sin asunto') + ' — ' + nombre,
-      html
-    })
+    // Dos sends en paralelo: notificacion al admin (critico) + confirmacion
+    // al usuario (secundario, no bloquea la request si falla).
+    const [adminResult, userResult] = await Promise.allSettled([
+      resend.emails.send({
+        from: 'MotoPatio Contacto <noreply@motopatio.com>',
+        to: 'info@motopatio.com',
+        replyTo: email,
+        subject: '[Contacto] ' + (asunto || 'Sin asunto') + ' — ' + nombre,
+        html,
+      }),
+      sendContactoConfirmacion({ to: email, nombre, asunto, mensaje }),
+    ])
 
-    if (result.error) {
-      console.error('[contacto] Resend error:', result.error)
+    // Admin: critico. Si falla, la request falla.
+    if (adminResult.status === 'rejected') {
+      console.error('[contacto] admin send rejected:', adminResult.reason)
       return NextResponse.json(
         { error: 'No se pudo enviar el mensaje. Intenta más tarde.' },
         { status: 500 }
       )
+    }
+    if (adminResult.value.error) {
+      console.error('[contacto] admin send error:', adminResult.value.error)
+      return NextResponse.json(
+        { error: 'No se pudo enviar el mensaje. Intenta más tarde.' },
+        { status: 500 }
+      )
+    }
+
+    // Usuario: secundario. Solo loggear si falla.
+    if (userResult.status === 'rejected') {
+      console.error('[contacto] send confirmacion al usuario fallo:', userResult.reason)
+    } else if (userResult.value.error) {
+      console.error('[contacto] send confirmacion al usuario fallo:', userResult.value.error)
     }
 
     return NextResponse.json({ ok: true })

@@ -188,6 +188,42 @@ export async function sendExpiracionAviso(opts: {
   })
 }
 
+/**
+ * Confirmacion al usuario que llenó el form de contacto. El admin ya recibe
+ * su propia notificacion via /api/contacto. Este email es secundario: si
+ * falla, el caller solo loggea (no rompe la request).
+ */
+export async function sendContactoConfirmacion(opts: {
+  to: string
+  nombre: string
+  asunto: string
+  mensaje: string
+}) {
+  const n = (opts.nombre || '').split(' ')[0] || 'hola'
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+  const asuntoTxt = opts.asunto && opts.asunto.trim() ? opts.asunto : '(sin asunto)'
+  const mensajeHtml = escape(opts.mensaje).replace(/\n/g, '<br>')
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">Recibimos tu mensaje</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, recibimos tu mensaje y queríamos confirmarte que ya está en nuestra bandeja. Te responderemos en un máximo de <strong>48 horas hábiles</strong> al correo desde el que escribiste.</p>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Mientras tanto, puedes revisar las preguntas más frecuentes en nuestro Centro de Ayuda — quizá ya tengas la respuesta sin esperar.</p>' +
+    btn(BASE + '/ayuda', 'Ver Centro de Ayuda') +
+    '<div style="background:#f9f9fb;border-radius:8px;padding:16px 20px;margin:24px 0 0;border-left:4px solid #e8572a;">' +
+    '<p style="margin:0 0 8px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Recap de tu mensaje</p>' +
+    '<p style="margin:0 0 10px;font-size:14px;color:#3f3f46;"><strong>Asunto:</strong> ' + escape(asuntoTxt) + '</p>' +
+    '<p style="margin:0;font-size:14px;color:#3f3f46;line-height:1.6;">' + mensajeHtml + '</p>' +
+    '</div>' +
+    '<p style="margin:24px 0 0;font-size:12px;color:#a1a1aa;text-align:center;">Si no enviaste este mensaje, puedes ignorar este correo.</p>'
+  return resend.emails.send({
+    from: 'MotoPatío <noreply@motopatio.com>',
+    to: opts.to,
+    replyTo: 'info@motopatio.com',
+    subject: 'Recibimos tu mensaje — MotoPatío',
+    html: wrap(body),
+  })
+}
+
 const ADMIN_EMAIL = 'info@motopatio.com'
 
 export async function notifyAdmin(subject: string, body: string): Promise<void> {
