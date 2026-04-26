@@ -3,14 +3,28 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendVerificationEmail } from '@/lib/emails'
+import { getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json()
+    const { name, email, password, ciudad, provincia } = await request.json()
     if (!name || !email || !password)
       return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 })
     if (password.length < 6)
       return NextResponse.json({ error: 'La contrasena debe tener al menos 6 caracteres' }, { status: 400 })
+
+    // Validacion de combo provincia/ciudad: si ambos vienen, ciudad debe pertenecer
+    // a la provincia. Tolerante a null/undefined (ambos opcionales en la DB).
+    if (ciudad && provincia) {
+      const ciudadesValidas = getCiudadesByProvincia(provincia)
+      if (!ciudadesValidas.includes(ciudad)) {
+        return NextResponse.json(
+          { error: 'Ciudad no pertenece a la provincia seleccionada' },
+          { status: 400 }
+        )
+      }
+    }
+
     const exists = await prisma.user.findUnique({ where: { email } })
     if (exists)
       return NextResponse.json({ error: 'Este correo ya esta registrado' }, { status: 409 })
@@ -20,6 +34,8 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({
       data: {
         name, email,
+        ciudad: ciudad || null,
+        provincia: provincia || null,
         password: hashedPassword,
         role: 'user',
         emailVerifyToken: verifyToken,

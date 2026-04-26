@@ -197,7 +197,7 @@ export default function AdminPage() {
                       </div>
                       <div>
                         <div style={{fontSize:'14px',fontWeight:700,color:'#1E2340'}}>{user.name || 'Sin nombre'}</div>
-                        <div style={{fontSize:'12px',color:'#888'}}>{user.email} · {user.city || 'Sin ciudad'} · {user._count?.listings || 0} motos</div>
+                        <div style={{fontSize:'12px',color:'#888'}}>{user.email} · {user.ciudad || 'Sin ciudad'} · {user._count?.listings || 0} motos</div>
                       </div>
                     </div>
                     <div style={{display:'flex',gap:'6px',marginLeft:'46px'}}>

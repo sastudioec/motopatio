@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -11,7 +12,8 @@ export default function RegistroPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [city, setCity] = useState('')
+  const [provincia, setProvincia] = useState('')
+  const [ciudad, setCiudad] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -30,7 +32,7 @@ export default function RegistroPage() {
     const res = await fetch('/api/auth/registro', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({name, email, password, city}),
+      body: JSON.stringify({name, email, password, ciudad, provincia}),
     })
     const data = await res.json()
     if (!res.ok) {
@@ -85,13 +87,19 @@ export default function RegistroPage() {
               placeholder="tu@email.com" />
           </div>
           <div style={{marginBottom:'14px'}}>
-            <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Ciudad</label>
-            <select value={city} onChange={e=>setCity(e.target.value)} required
+            <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Provincia</label>
+            <select value={provincia} onChange={e=>{ setProvincia(e.target.value); setCiudad('') }} required
               style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px'}}>
-              <option value="">Selecciona tu ciudad</option>
-              <option>Quito</option><option>Guayaquil</option><option>Cuenca</option>
-              <option>Ambato</option><option>Loja</option><option>Ibarra</option>
-              <option>Santo Domingo</option><option>Manta</option><option>Riobamba</option><option>Otra</option>
+              <option value="">Selecciona tu provincia</option>
+              {getProvincias().map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div style={{marginBottom:'14px'}}>
+            <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Ciudad</label>
+            <select value={ciudad} onChange={e=>setCiudad(e.target.value)} required disabled={!provincia}
+              style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px',background: provincia ? '#fff' : '#f5f5f5'}}>
+              <option value="">{provincia ? 'Selecciona tu ciudad' : 'Selecciona provincia primero'}</option>
+              {provincia && getCiudadesByProvincia(provincia).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div style={{marginBottom:'14px'}}>

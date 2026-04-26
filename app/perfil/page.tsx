@@ -3,6 +3,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
 type Tab = 'personal' | 'seguridad' | 'pagos' | 'eliminar'
 
@@ -15,7 +16,8 @@ export default function ProfilePage() {
   const [name, setName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
-  const [city, setCity] = useState('')
+  const [provincia, setProvincia] = useState('')
+  const [ciudad, setCiudad] = useState('')
   const [bio, setBio] = useState('')
   const [gender, setGender] = useState('')
   const [birthDate, setBirthDate] = useState('')
@@ -52,7 +54,8 @@ export default function ProfilePage() {
             setName(data.user.name || '')
             setLastName(data.user.lastName || '')
             setPhone(data.user.phone || '')
-            setCity(data.user.city || '')
+            setProvincia(data.user.provincia || '')
+            setCiudad(data.user.ciudad || '')
             setBio(data.user.bio || '')
             setGender(data.user.gender || '')
             setBirthDate(data.user.birthDate ? data.user.birthDate.split('T')[0] : '')
@@ -88,7 +91,7 @@ export default function ProfilePage() {
     const res = await fetch('/api/user/profile', {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, lastName, phone, city, bio, gender, birthDate, avatar }),
+      body: JSON.stringify({ name, lastName, phone, ciudad, provincia, bio, gender, birthDate, avatar }),
     })
     if (res.ok) showMsg('ok', 'Perfil actualizado correctamente')
     else showMsg('err', 'Error al guardar los cambios')
@@ -271,12 +274,18 @@ export default function ProfilePage() {
                 </div>
 
                 <div style={{marginBottom:'16px'}}>
+                  <label style={labelStyle}>Provincia</label>
+                  <select value={provincia} onChange={e=>{ setProvincia(e.target.value); setCiudad('') }} style={inputStyle}>
+                    <option value="">Selecciona tu provincia</option>
+                    {getProvincias().map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div style={{marginBottom:'16px'}}>
                   <label style={labelStyle}>Ciudad</label>
-                  <select value={city} onChange={e=>setCity(e.target.value)} style={inputStyle}>
-                    <option value="">Selecciona tu ciudad</option>
-                    <option>Quito</option><option>Guayaquil</option><option>Cuenca</option>
-                    <option>Ambato</option><option>Loja</option><option>Ibarra</option>
-                    <option>Santo Domingo</option><option>Manta</option><option>Otra</option>
+                  <select value={ciudad} onChange={e=>setCiudad(e.target.value)} disabled={!provincia}
+                    style={{...inputStyle, background: provincia ? '#fff' : '#f5f5f5'}}>
+                    <option value="">{provincia ? 'Selecciona tu ciudad' : 'Selecciona provincia primero'}</option>
+                    {provincia && getCiudadesByProvincia(provincia).map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
 
