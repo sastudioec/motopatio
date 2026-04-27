@@ -42,7 +42,9 @@ export default function ProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') router.push('/auth/login')
+    // Sin sesión: empuja a login pasando ?next=/perfil para que post-login
+    // vuelva aquí en lugar de caer al fallback por rol (home/mi-tienda).
+    if (status === 'unauthenticated') router.push('/auth/login?next=/perfil')
     // Los dealers no tienen perfil personal — su gestión vive en /mi-tienda/perfil.
     if (status === 'authenticated' && (session?.user as any)?.role === 'dealer') {
       router.replace('/mi-tienda/perfil')
