@@ -1,9 +1,35 @@
 /**
  * Cliente para la API de PayPhone Cajita de Pagos.
  * Docs: https://docs.payphone.app/cajita-de-pagos-payphone
+ *
+ * Usamos axios (no fetch nativo) por recomendacion de soporte PayPhone:
+ * en Next.js fetch presenta fallos intermitentes (peticiones que no se
+ * completan, timeouts silenciosos, respuestas que no llegan). Axios mitiga
+ * el problema. La logica de manejo de respuesta (HTML, JSON, fallback a
+ * Sale/client) queda intacta.
  */
 
+import axios, { AxiosInstance } from 'axios'
+
 const PAYPHONE_API_BASE = 'https://pay.payphonetodoesposible.com/api'
+
+let _client: AxiosInstance | null = null
+function getClient(): AxiosInstance {
+  if (_client) return _client
+  _client = axios.create({
+    baseURL: PAYPHONE_API_BASE,
+    timeout: 30000,
+    validateStatus: () => true,
+    headers: { 'Content-Type': 'application/json' },
+    transitional: { clarifyTimeoutError: true },
+    // No dejar que axios intente JSON.parse automatico: PayPhone a veces
+    // responde HTML con content-type incorrecto y romperia el parser.
+    // Recibimos string crudo y parseamos manualmente igual que el flow
+    // original con fetch (looksLikeHtml + JSON.parse en try/catch).
+    transformResponse: [(data) => data],
+  })
+  return _client
+}
 
 export type PayPhoneConfirmResponse = {
   transactionId?: number
@@ -58,20 +84,17 @@ export async function confirmTransaction(params: {
 }): Promise<PayPhoneConfirmResponse> {
   const { token } = getConfig()
 
-  const res = await fetch(PAYPHONE_API_BASE + '/button/V2/Confirm', {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + token,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      id: params.id,
-      clientTxId: params.clientTxId,
-    }),
-  })
+  const res = await getClient().post(
+    '/button/V2/Confirm',
+    { id: params.id, clientTxId: params.clientTxId },
+    { headers: { Authorization: 'Bearer ' + token } }
+  )
 
-  const text = await res.text()
-  const contentType = res.headers.get('content-type')
+  const text: string = typeof res.data === 'string' ? res.data : String(res.data ?? '')
+  const contentType =
+    (res.headers['content-type'] as string | undefined) ??
+    (res.headers['Content-Type'] as string | undefined) ??
+    null
 
   console.log(
     '[PayPhone Confirm] status=' + res.status,
@@ -120,7 +143,7 @@ export async function confirmTransaction(params: {
 
   data.httpStatus = res.status
 
-  if (!res.ok) {
+  if (res.status < 200 || res.status >= 300) {
     throw new Error('PayPhone Confirm fallo ' + res.status + ': ' + (data.message || text.slice(0, 200)))
   }
 
@@ -140,15 +163,17 @@ export async function querySaleByClientTxId(
 ): Promise<PayPhoneConfirmResponse | null> {
   const { token } = getConfig()
 
-  const res = await fetch(PAYPHONE_API_BASE + '/Sale/client/' + encodeURIComponent(clientTxId), {
-    method: 'GET',
+  const res = await getClient().get('/Sale/client/' + encodeURIComponent(clientTxId), {
     headers: { Authorization: 'Bearer ' + token },
   })
 
   if (res.status === 404) return null
 
-  const text = await res.text()
-  const contentType = res.headers.get('content-type')
+  const text: string = typeof res.data === 'string' ? res.data : String(res.data ?? '')
+  const contentType =
+    (res.headers['content-type'] as string | undefined) ??
+    (res.headers['Content-Type'] as string | undefined) ??
+    null
 
   console.log(
     '[PayPhone Sale/client] status=' + res.status,
@@ -182,7 +207,7 @@ export async function querySaleByClientTxId(
   } catch {
     throw new Error('PayPhone Sale/client respondio no-JSON: ' + text.slice(0, 500))
   }
-  if (!res.ok) {
+  if (res.status < 200 || res.status >= 300) {
     throw new Error(
       'PayPhone Sale/client fallo ' + res.status + ': ' + (data.message || text.slice(0, 200))
     )
