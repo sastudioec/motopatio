@@ -246,16 +246,19 @@ export async function sendDealerWelcomeEmail(
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
     '&#x1F3EA; Bienvenido a MotoPatio Dealers, ' + info.nombreComercial + '!</h2>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;text-align:center;margin:0 0 20px;">' +
-    'Tu concesionario quedo registrado. Estamos revisando tu documentacion para aprobar tu cuenta.</p>' +
-    '<div style="background:#f9f9fb;border-radius:8px;padding:20px;margin:0 0 20px;">' +
-    '<p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#1a1f36;">Tu prueba gratuita</p>' +
-    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; 60 dias para probar el panel y publicar anuncios</p>' +
-    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Vence el <strong>' + fecha + '</strong></p>' +
-    '<p style="margin:0;font-size:14px;color:#3f3f46;">&#10003; Antes de esa fecha te enviaremos los planes disponibles</p>' +
+    'Tu cuenta quedó creada. Estamos revisando tu documentación para aprobarla — mientras tanto, puedes ir armando tu marca.</p>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 12px;">' +
+    'Antes de publicar tu primera moto, completa el perfil de tu concesionario:</p>' +
+    '<div style="background:#f9f9fb;border-radius:8px;padding:20px;margin:0 0 16px;">' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Logo y banner de tu negocio</p>' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Ubicación y datos de contacto</p>' +
+    '<p style="margin:0;font-size:14px;color:#3f3f46;">&#10003; Tus redes sociales</p>' +
     '</div>' +
-    '<p style="font-size:14px;color:#52525b;line-height:1.6;margin:0 0 16px;">' +
-    'Tu perfil publico ya esta activo en <a href="' + BASE + '/dealers/' + info.slug + '" style="color:#e8572a;font-weight:700;">' + BASE + '/dealers/' + info.slug + '</a>. Cierra sesion y vuelve a entrar para ver el panel "Mi Tienda".</p>' +
-    btn(BASE + '/mi-tienda', 'Ir al panel')
+    '<p style="font-size:14px;color:#52525b;line-height:1.6;margin:0 0 8px;">' +
+    'Así, cuando publiques tu primera moto, los compradores ya verán tu marca completa desde el primer día.</p>' +
+    btn(BASE + '/mi-tienda/perfil', 'Completa tu perfil') +
+    '<p style="font-size:13px;color:#a1a1aa;line-height:1.6;margin:24px 0 0;text-align:center;">' +
+    'Tu prueba gratuita: <strong>60 días</strong>, vence el <strong>' + fecha + '</strong>. Antes de esa fecha te enviaremos los planes disponibles.</p>'
   return resend.emails.send({
     from: 'MotoPatio <noreply@motopatio.com>',
     to,
