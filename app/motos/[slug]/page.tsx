@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { publicListingFilter } from '@/lib/listings-public'
 import MotoDetailClient from './MotoDetailClient'
 import RelatedBlock from './RelatedBlock'
 import { getRelatedListings, deriveHeader } from './related'
@@ -10,10 +11,21 @@ export const dynamic = 'force-dynamic'
 const BASE = (process.env.NEXTAUTH_URL || 'https://motopatio.com').replace(/\/$/, '')
 
 async function getMoto(slug: string) {
-  return prisma.listing.findUnique({
-    where: { slug },
-    include: { user: { select: { name: true, phone: true } } },
+  // findFirst con filtro publico: si el dealer no esta aprobado el detalle 404.
+  const listing = await prisma.listing.findFirst({
+    where: { slug, ...publicListingFilter() },
+    include: {
+      user: { select: { name: true, phone: true } },
+      dealer: {
+        select: {
+          id: true, slug: true, nombreComercial: true,
+          verificado: true, approvalStatus: true, logo: true,
+          telefono: true, whatsapp: true, emailContacto: true,
+        },
+      },
+    },
   })
+  return listing
 }
 
 function parseFotos(raw: string | null | undefined): string[] {

@@ -8,12 +8,12 @@ datasource db {
 }
 
 model User {
-  id                    String    @id @default(cuid())
+  id                    String         @id @default(cuid())
   name                  String?
   lastName              String?
   gender                String?
   birthDate             DateTime?
-  email                 String    @unique
+  email                 String         @unique
   emailVerified         DateTime?
   password              String?
   phone                 String?
@@ -22,61 +22,70 @@ model User {
   bio                   String?
   avatar                String?
   image                 String?
-  cedulaVerified        Boolean   @default(false)
-  phoneVerified         Boolean   @default(false)
-  role                  String    @default("user")
+  cedulaVerified        Boolean        @default(false)
+  phoneVerified         Boolean        @default(false)
+  role                  String         @default("user")
   emailVerifyToken      String?
   emailVerifyExpires    DateTime?
-  passwordResetToken    String?   @unique
+  passwordResetToken    String?        @unique
   passwordResetExpires  DateTime?
-  blocked               Boolean   @default(false)
+  blocked               Boolean        @default(false)
   lastFreePublicationAt DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
   listings              Listing[]
   payments              Payment[]
   accounts              Account[]
   sessions              Session[]
+  dealer                Dealer?
+  leadsEnviados         Lead[]
+  listingAudits         ListingAudit[]
 }
 
 model Listing {
-  id             String    @id @default(cuid())
-  publicId       String    @unique
-  slug           String?   @unique
-  userId         String
-  user           User      @relation(fields: [userId], references: [id])
-  marca          String
-  modelo         String
-  anio           Int
-  cilindraje     String
-  tipo           String
-  km             Int
-  color          String?
-  provincia      String?
-  ciudad         String
-  precio         Float
-  negociable     Boolean   @default(false)
-  descripcion    String?   @db.Text
-  placa          String?
-  estado         String    @default("activo")
-  planTipo       String    @default("gratis")
-  destacado      Boolean   @default(false)
-  destacadoHasta DateTime?
-  publishedAt    DateTime?
-  expiraEn       DateTime?
+  id                              String         @id @default(cuid())
+  publicId                        String         @unique
+  slug                            String?        @unique
+  userId                          String
+  user                            User           @relation(fields: [userId], references: [id])
+  marca                           String
+  modelo                          String
+  anio                            Int
+  cilindraje                      String
+  tipo                            String
+  km                              Int
+  color                           String?
+  provincia                       String?
+  ciudad                          String
+  precio                          Float
+  negociable                      Boolean        @default(false)
+  descripcion                     String?        @db.Text
+  placa                           String?
+  estado                          String         @default("activo")
+  planTipo                        String         @default("gratis")
+  destacado                       Boolean        @default(false)
+  destacadoHasta                  DateTime?
+  publishedAt                     DateTime?
+  expiraEn                        DateTime?
   recordatorioExpiracionEnviadoAt DateTime?
-  fotos          String?   @db.Text
-  esElectrica    Boolean   @default(false)
-  video          String?
-  extras         String?   @db.Text
-  matricula      String?
-  soat           String?
-  views          Int       @default(0)
-  planId         String?
-  plan           Plan?     @relation(fields: [planId], references: [id])
-  payments       Payment[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  fotos                           String?        @db.Text
+  esElectrica                     Boolean        @default(false)
+  video                           String?
+  extras                          String?        @db.Text
+  matricula                       String?
+  soat                            String?
+  views                           Int            @default(0)
+  planId                          String?
+  plan                            Plan?          @relation(fields: [planId], references: [id])
+  payments                        Payment[]
+  dealerId                        String?
+  dealer                          Dealer?        @relation(fields: [dealerId], references: [id])
+  leads                           Lead[]
+  audits                          ListingAudit[]
+  createdAt                       DateTime       @default(now())
+  updatedAt                       DateTime       @updatedAt
+
+  @@index([dealerId])
 }
 
 model Plan {
@@ -97,28 +106,29 @@ model Plan {
 }
 
 model Payment {
-  id                    String    @id @default(cuid())
+  id                    String              @id @default(cuid())
   userId                String
-  user                  User      @relation(fields: [userId], references: [id])
+  user                  User                @relation(fields: [userId], references: [id])
   listingId             String?
-  listing               Listing?  @relation(fields: [listingId], references: [id])
+  listing               Listing?            @relation(fields: [listingId], references: [id])
   planId                String?
-  plan                  Plan?     @relation(fields: [planId], references: [id])
+  plan                  Plan?               @relation(fields: [planId], references: [id])
   concept               String
   planTipo              String?
   featuredDays          Int?
   amountCents           Int
-  currency              String    @default("USD")
-  status                String    @default("pending")
-  clientTransactionId   String    @unique
+  currency              String              @default("USD")
+  status                String              @default("pending")
+  clientTransactionId   String              @unique
   payphoneTransactionId String?
-  payphoneRawResponse   String?   @db.Text
+  payphoneRawResponse   String?             @db.Text
   metadata              Json?
-  errorMessage          String?   @db.Text
-  createdAt             DateTime  @default(now())
+  errorMessage          String?             @db.Text
+  createdAt             DateTime            @default(now())
   confirmedAt           DateTime?
   activatedAt           DateTime?
-  updatedAt             DateTime  @updatedAt
+  updatedAt             DateTime            @updatedAt
+  dealerSubscription    DealerSubscription?
 
   @@index([userId, status])
   @@index([status, createdAt])
@@ -215,4 +225,252 @@ model MotoModel {
 
   @@unique([brandId, name])
   @@index([brandId, active, name])
+}
+
+// Concesionario. User.role pasa a "dealer" cuando se completa el onboarding.
+// Soft-delete: nunca borrado fisico, solo `activo = false`.
+model Dealer {
+  id     String @id @default(cuid())
+  slug   String @unique
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  nombreComercial String
+  descripcion     String? @db.Text
+  logo            String?
+  bannerImage     String?
+
+  direccion     String?
+  ciudad        String
+  provincia     String
+  googleMapsUrl String?
+
+  telefono      String?
+  whatsapp      String?
+  emailContacto String?
+  sitioWeb      String?
+  redes         Json?
+
+  ruc         String? @unique
+  razonSocial String?
+
+  verificado   Boolean   @default(false)
+  verificadoAt DateTime?
+
+  // Estado de revision admin: "pending_approval" | "approved" | "rejected"
+  // Default pending_approval: el dealer puede usar el panel y cargar motos
+  // pero su perfil publico y sus listings se ocultan hasta aprobacion.
+  approvalStatus String    @default("pending_approval")
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  rejectionNotes String?   @db.Text
+
+  activo Boolean @default(true)
+
+  // "trial" | "active" | "past_due" | "cancelled" | "expired"
+  subscriptionStatus    String      @default("trial")
+  subscriptionPlanId    String?
+  subscriptionPlan      DealerPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  subscriptionExpiresAt DateTime?
+  trialEndsAt           DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listings      Listing[]
+  subscriptions DealerSubscription[]
+  leads         Lead[]
+  verifications DealerVerification[]
+
+  @@index([activo, ciudad])
+  @@index([subscriptionStatus, subscriptionExpiresAt])
+}
+
+// Catalogo separado de Plan. PayPhone es one-shot: la "renovacion mensual"
+// se simula con cargos manuales recurrentes (ver lib/dealer-plans.ts).
+model DealerPlan {
+  id                      String   @id
+  name                    String
+  priceCents              Int      @default(0)
+  durationDays            Int      @default(30)
+  maxListings             Int      @default(0)
+  maxFeaturedListings     Int      @default(0)
+  includesPriorityListing Boolean  @default(false)
+  includesAnalytics       Boolean  @default(false)
+  isActive                Boolean  @default(true)
+  sortOrder               Int      @default(0)
+  description             String?  @db.Text
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  dealers       Dealer[]
+  subscriptions DealerSubscription[]
+}
+
+// Historial de periodos de suscripcion. Dealer.subscriptionExpiresAt es el
+// estado actual; aca queda el log para auditoria y reportes.
+model DealerSubscription {
+  id          String     @id @default(cuid())
+  dealerId    String
+  dealer      Dealer     @relation(fields: [dealerId], references: [id])
+  planId      String
+  plan        DealerPlan @relation(fields: [planId], references: [id])
+  // "active" | "expired" | "cancelled"
+  status      String     @default("active")
+  startedAt   DateTime   @default(now())
+  expiresAt   DateTime
+  cancelledAt DateTime?
+  paymentId   String?    @unique
+  payment     Payment?   @relation(fields: [paymentId], references: [id])
+  autoRenew   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([dealerId, status])
+  @@index([expiresAt, status])
+}
+
+// Auditoria de verificacion administrativa. reviewedById es solo string
+// (no FK formal) para mantener desacoplado del modelo User.
+model DealerVerification {
+  id           String    @id @default(cuid())
+  dealerId     String
+  dealer       Dealer    @relation(fields: [dealerId], references: [id])
+  // "ruc" | "cedula" | "matricula_concesionario"
+  documentType String
+  documentUrl  String
+  // "pending" | "approved" | "rejected"
+  status       String    @default("pending")
+  reviewedById String?
+  reviewedAt   DateTime?
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([dealerId, status])
+  @@index([status, createdAt])
+}
+
+// Captura de contacto pre-WhatsApp. Aplica a TODOS los listings
+// (dealer y particular). El dealer ve solo sus leads via dealerId;
+// para listings de particular, listingOwnerType="user" y dealerId=null.
+model Lead {
+  id     String  @id @default(cuid())
+  // Quien envia el lead (puede ser anonimo si no esta logueado)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  nombre   String
+  email    String?
+  telefono String
+  ciudad   String?
+
+  // Listing al que apunta el lead
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id])
+
+  // Snapshot del dueno del listing al momento del lead
+  // listingOwnerType: "dealer" | "user"
+  listingOwnerType String
+  listingOwnerId   String
+
+  // Cache directo cuando el listing es de dealer (queries del dashboard)
+  dealerId String?
+  dealer   Dealer? @relation(fields: [dealerId], references: [id])
+
+  interesadoFinanciamiento Boolean @default(false)
+  mensaje                  String? @db.Text
+
+  // Canal elegido tras el modal: "whatsapp" | "llamada" | "email" | "formulario"
+  tipo   String
+  // "nuevo" | "contactado" | "convertido" | "descartado"
+  estado String @default("nuevo")
+
+  // Datos de contexto del navegador (auditoria interna admin only).
+  userAgent String? @db.Text
+  ipHash    String?
+
+  createdAt    DateTime  @default(now())
+  respondidoAt DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  events LeadEvent[]
+
+  @@index([dealerId, createdAt])
+  @@index([listingId, createdAt])
+  @@index([listingOwnerType, listingOwnerId])
+  @@index([estado, createdAt])
+}
+
+// Tracking del embudo de captura de leads. Solo se ve en admin.
+// type: "whatsapp_button_clicked" | "lead_modal_opened" |
+//       "lead_form_submitted" | "whatsapp_redirected"
+model LeadEvent {
+  id        String   @id @default(cuid())
+  type      String
+  listingId String?
+  dealerId  String?
+  leadId    String?
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+  userAgent String?  @db.Text
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([listingId, createdAt])
+  @@index([dealerId, createdAt])
+}
+
+// Auditoria de cambios sobre Listings. Conserva historico aunque el
+// listing o el user se borren (FKs SET NULL). Visible solo en admin.
+//
+// action:
+//   "created"        — POST /api/listings
+//   "updated"        — PATCH (cambio de campos)
+//   "status_changed" — PATCH con cambio de estado (activo/suspendido/vendido)
+//   "marked_sold"    — atajo: PATCH con estado=vendido
+//   "deleted"        — DELETE
+//
+// changes: JSON { campo: { from, to } } con los campos efectivamente
+// alterados. Para "created" guarda snapshot completo. Para "deleted"
+// guarda snapshot pre-borrado.
+model ListingAudit {
+  id        String   @id @default(cuid())
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  changes   Json?
+  userAgent String?  @db.Text
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  @@index([listingId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ============================================================
+// DealerApplication — solicitudes del programa de concesionarios
+// recogidas desde el formulario público en /dealers/programa.
+// Independiente del flag DEALERS_ENABLED. Status: "pending" |
+// "contacted" | "approved" | "rejected". stockRange: "1-10" |
+// "11-30" | "31-50" | "50+".
+// ============================================================
+model DealerApplication {
+  id           String   @id @default(cuid())
+  businessName String
+  contactName  String
+  email        String
+  phone        String
+  city         String
+  stockRange   String
+  message      String?  @db.Text
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email])
 }

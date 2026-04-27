@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { publicListingFilter, publicListingDealerInclude } from '@/lib/listings-public'
 import { getTipoBySlug, getCiudadBySlug } from '@/lib/category-slugs'
 import { getCiudadesForTipo, getTiposForCiudad } from '@/lib/category-queries'
 import { buildCollectionPage, buildBreadcrumbList } from '@/lib/category-jsonld'
@@ -15,7 +16,8 @@ async function getData(tipoSlug: string, ciudadSlug: string) {
   const ciudad = getCiudadBySlug(ciudadSlug)
   if (!ciudad) return null
   const listings = await prisma.listing.findMany({
-    where: { estado: 'activo', tipo: tipo.db, ciudad: ciudad.db },
+    where: { estado: 'activo', tipo: tipo.db, ciudad: ciudad.db, ...publicListingFilter() },
+    include: publicListingDealerInclude,
     orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],
     take: 48,
   })

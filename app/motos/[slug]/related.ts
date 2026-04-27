@@ -43,6 +43,10 @@ export async function getRelatedListings(moto: MotoLike): Promise<ScoredListing[
       id: { not: moto.id },
       userId: { not: moto.userId },
       OR: orClauses,
+      AND: [{ OR: [
+        { dealerId: null },
+        { dealer: { is: { approvalStatus: 'approved', activo: true } } },
+      ] }],
     },
     take: 50,
     orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],
@@ -76,6 +80,10 @@ export async function getRelatedListings(moto: MotoLike): Promise<ScoredListing[
         estado: 'activo',
         userId: { not: moto.userId },
         id: { notIn: Array.from(excludeIds) },
+        AND: [{ OR: [
+          { dealerId: null },
+          { dealer: { is: { approvalStatus: 'approved', activo: true } } },
+        ] }],
       },
       take: N_TOP - related.length,
       orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],

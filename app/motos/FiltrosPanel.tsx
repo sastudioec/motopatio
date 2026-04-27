@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition, ReactNode } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { PROVINCIAS_ECUADOR } from '@/lib/provincias-ecuador'
+import StyledSelect from '@/app/components/StyledSelect'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -19,13 +20,14 @@ export type Filtros = {
   cilindrajes: string[]
   picoyplaca: string
   soloElectricas: boolean
+  soloDealers: boolean
   sort: string
 }
 
 export const EMPTY_FILTROS: Filtros = {
   buscar: '', precioMin: '', precioMax: '', anioMin: '', anioMax: '', kmMax: '',
   marcas: [], provincia: '', ciudad: '', tipos: [], cilindrajes: [],
-  picoyplaca: '', soloElectricas: false, sort: 'recientes',
+  picoyplaca: '', soloElectricas: false, soloDealers: false, sort: 'recientes',
 }
 
 const TIPOS = ['Urbana', 'Naked', 'Trail/Enduro', 'Scooter', 'Deportiva', 'Crucero', 'Touring', 'Doble propósito']
@@ -54,6 +56,7 @@ function buildQueryString(f: Filtros): string {
   if (f.cilindrajes.length) qs.set('cilindrajes', f.cilindrajes.join(','))
   if (f.picoyplaca) qs.set('picoyplaca', f.picoyplaca)
   if (f.soloElectricas) qs.set('soloElectricas', '1')
+  if (f.soloDealers) qs.set('dealers', '1')
   if (f.sort && f.sort !== 'recientes') qs.set('sort', f.sort)
   // Al cambiar filtros volvemos a pagina 1 (no seteamos page).
   const s = qs.toString()
@@ -75,6 +78,7 @@ function parseFromUrl(sp: URLSearchParams): Filtros {
     cilindrajes: (sp.get('cilindrajes') || '').split(',').filter(Boolean),
     picoyplaca: sp.get('picoyplaca') || '',
     soloElectricas: sp.get('soloElectricas') === '1',
+    soloDealers: sp.get('dealers') === '1',
     sort: sp.get('sort') || 'recientes',
   }
 }
@@ -194,6 +198,15 @@ function PanelUI({ state, marcasDB, onSubmit }: { state: FiltrosState; marcasDB:
             style={{ cursor: 'pointer', width: '16px', height: '16px' }}
           />
           ⚡ Solo eléctricas
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', cursor: 'pointer', fontSize: '13px', color: '#1E2340', fontWeight: 600 }}>
+          <input
+            type="checkbox"
+            checked={filtros.soloDealers || false}
+            onChange={e => update({ soloDealers: e.target.checked } as any, { immediate: true })}
+            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+          />
+          🏪 Solo concesionarios
         </label>
       </div>
 
@@ -432,16 +445,12 @@ export function SortSelect({ initial }: { initial: string }) {
   }
 
   return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      style={{ padding: '9px 12px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
-    >
+    <StyledSelect value={value} onChange={onChange} minWidth={200} ariaLabel="Ordenar">
       <option value="recientes">Más recientes</option>
       <option value="precio_asc">Precio menor a mayor</option>
       <option value="precio_desc">Precio mayor a menor</option>
       <option value="km_asc">Menor kilometraje</option>
-    </select>
+    </StyledSelect>
   )
 }
 

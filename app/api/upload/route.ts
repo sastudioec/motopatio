@@ -18,13 +18,24 @@ export async function POST(req: NextRequest) {
   try {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+    // resource_type:'auto' detecta el tipo (image / raw / video). Sin esto,
+    // Cloudinary trata todo como imagen y rechaza PDFs con 400, lo que dejaba
+    // el wizard de dealer trabado al subir el documento de verificacion.
     const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream({ folder: 'motopatio' }, (error, result) => {
-        if (error) reject(error)
-        else resolve(result)
-      }).end(buffer)
+      cloudinary.uploader.upload_stream(
+        { folder: 'motopatio', resource_type: 'auto' },
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result)
+        }
+      ).end(buffer)
     })
-    return NextResponse.json({ url: (result as any).secure_url })
+    const r = result as any
+    return NextResponse.json({
+      url: r.secure_url,
+      resourceType: r.resource_type,
+      format: r.format,
+    })
   } catch (err: any) {
     console.error('Cloudinary upload failed', err)
     return NextResponse.json({ error: 'No se pudo subir la imagen' }, { status: 500 })

@@ -5,15 +5,25 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 
+function isSafeRelativeUrl(s: string | null): boolean {
+  if (!s) return false
+  if (!s.startsWith('/')) return false
+  if (s.startsWith('//') || s.startsWith('/\\')) return false
+  return true
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  
+  const [nextParam, setNextParam] = useState<string | null>(null)
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const nxt = params.get('next')
+    if (isSafeRelativeUrl(nxt)) setNextParam(nxt)
     if (params.get('verified') === '1') {
       setSuccess('\u00a1Correo verificado! Ya puedes ingresar con tu cuenta.')
     }
@@ -27,6 +37,10 @@ export default function LoginPage() {
       setError('El enlace expir\u00f3. Solicita un nuevo correo de verificaci\u00f3n.')
     }
   }, [])
+
+  // /auth/post-login decide a donde mandar al usuario segun rol + next.
+  const postLoginUrl = '/auth/post-login' + (nextParam ? '?next=' + encodeURIComponent(nextParam) : '')
+
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,7 +68,7 @@ export default function LoginPage() {
       }
       setLoading(false)
     } else {
-      router.push('/')
+      router.push(postLoginUrl)
     }
   }
 
@@ -71,7 +85,7 @@ export default function LoginPage() {
         <button
           onClick={() => {
             document.cookie = `mp_intent=signin; Max-Age=300; Path=/; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`
-            signIn('google', { callbackUrl: '/' })
+            signIn('google', { callbackUrl: postLoginUrl })
           }}
           style={{width:'100%',padding:'12px',border:'1px solid #e0e0e0',borderRadius:'4px',background:'#fff',fontSize:'14px',fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginBottom:'20px',fontFamily:'Montserrat,sans-serif'}}>
           <svg width="18" height="18" viewBox="0 0 24 24">

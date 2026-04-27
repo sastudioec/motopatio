@@ -17,6 +17,15 @@ type MotoLike = {
   destacadoHasta?: string | Date | null
   esElectrica?: boolean
   placa?: string | null
+  // Cuando el listing pertenece a un dealer aprobado, viene precargado.
+  // Para listings de particulares queda undefined / null y no se muestra badge.
+  dealer?: {
+    id: string
+    slug: string
+    nombreComercial: string
+    verificado: boolean
+    approvalStatus: string
+  } | null
 }
 
 const DIA_LABEL: Record<number, string> = {
@@ -34,6 +43,7 @@ export default function MotoCard({ l, diaSeleccionado }: { l: MotoLike; diaSelec
   const href = '/motos/' + (l.slug || l.id)
   const ubicacion = l.provincia ? `${l.ciudad}, ${l.provincia}` : l.ciudad
   const isDestacado = !!l.destacadoHasta && new Date(l.destacadoHasta).getTime() > Date.now()
+  const showDealerBadge = !!l.dealer && l.dealer.approvalStatus === 'approved'
   const diaNum = diaSeleccionado != null && diaSeleccionado !== '' ? Number(diaSeleccionado) : NaN
   const pypBadge = (() => {
     if (!Number.isFinite(diaNum) || diaNum < 1 || diaNum > 5) return null
@@ -123,6 +133,27 @@ export default function MotoCard({ l, diaSeleccionado }: { l: MotoLike; diaSelec
               }}
             >
               {pypBadge}
+            </div>
+          )}
+          {showDealerBadge && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 6,
+                right: 6,
+                background: '#1E2340',
+                color: 'white',
+                fontSize: '10px',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: '3px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+              }}
+              title="Concesionario"
+            >
+              🏪 Concesionario
             </div>
           )}
         </div>

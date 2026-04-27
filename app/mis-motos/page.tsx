@@ -27,6 +27,7 @@ function MisMotosContent() {
   const [targetPlan, setTargetPlan] = useState<'basico' | 'full' | null>(null)
   const [retryHandled, setRetryHandled] = useState(false)
   const [paidPlansEnabled, setPaidPlansEnabled] = useState(true)
+  const [freeUsage, setFreeUsage] = useState<{ usedCount: number; limit: number } | null>(null)
 
   useEffect(() => {
     fetch('/api/plans')
@@ -34,6 +35,19 @@ function MisMotosContent() {
       .then(d => setPaidPlansEnabled(d.paidPlansEnabled !== false))
       .catch(() => setPaidPlansEnabled(true))
   }, [])
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    if ((session?.user as any)?.role === 'dealer') return
+    fetch('/api/listings/free-active', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d && typeof d.usedCount === 'number' && typeof d.limit === 'number') {
+          setFreeUsage({ usedCount: d.usedCount, limit: d.limit })
+        }
+      })
+      .catch(() => {})
+  }, [status, session])
 
   const handleDestacar = async (listingId: string) => {
     setDestacarError(null)
@@ -93,7 +107,11 @@ function MisMotosContent() {
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/login')
-  }, [status])
+    // Si el usuario es dealer, su gestion de anuncios vive en /mi-tienda
+    if (status === 'authenticated' && (session?.user as any)?.role === 'dealer') {
+      router.replace('/mi-tienda')
+    }
+  }, [status, session, router])
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -192,6 +210,38 @@ function MisMotosContent() {
           <h1 style={{fontFamily:'Poppins,sans-serif',fontSize:'24px',fontWeight:900,color:'#1E2340'}}>Mis motos</h1>
           <Link href="/publicar" style={{background:'#E8390E',color:'white',padding:'10px 20px',borderRadius:'4px',fontSize:'13px',fontWeight:700,textDecoration:'none'}}>+ Nueva publicacion</Link>
         </div>
+
+        {freeUsage && freeUsage.usedCount > 0 && (
+          freeUsage.usedCount >= freeUsage.limit ? (
+            <div style={{
+              background:'#fff5f0',
+              border:'2px solid #E8390E',
+              borderLeft:'6px solid #E8390E',
+              borderRadius:'8px',
+              padding:'14px 18px',
+              marginBottom:'20px',
+              fontSize:'14px',
+              color:'#1E2340',
+              fontWeight:700,
+              lineHeight:1.5,
+            }}>
+              Has usado tus {freeUsage.limit} publicaciones gratuitas.
+            </div>
+          ) : (
+            <div style={{
+              background:'#fff',
+              border:'1px solid #e0e0e0',
+              borderRadius:'8px',
+              padding:'12px 16px',
+              marginBottom:'20px',
+              fontSize:'13px',
+              color:'#52525b',
+              lineHeight:1.5,
+            }}>
+              Has publicado <strong style={{color:'#1E2340'}}>{freeUsage.usedCount} de {freeUsage.limit}</strong> motos gratuitas.
+            </div>
+          )
+        )}
 
         {motos.length === 0 ? (
           <div style={{background:'#fff',borderRadius:'8px',padding:'48px',textAlign:'center',border:'1px solid #e8e8e8'}}>

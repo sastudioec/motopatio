@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useMemo, ReactNode } from 'react'
+import { getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
 interface Props {
   bannerSlot?: ReactNode
@@ -8,40 +9,26 @@ interface Props {
 
 export default function Hero({ bannerSlot }: Props) {
   const router = useRouter()
-  const [marca, setMarca] = useState('')
-  const [tipo, setTipo] = useState('')
+  const [texto, setTexto] = useState('')
+  const [provincia, setProvincia] = useState('')
   const [ciudad, setCiudad] = useState('')
-  const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  const provincias = useMemo(() => getProvincias(), [])
+  const ciudades = useMemo(() => (provincia ? getCiudadesByProvincia(provincia) : []), [provincia])
+
+  const handleProvinciaChange = (val: string) => {
+    setProvincia(val)
+    setCiudad('')
+  }
 
   const handleSearch = () => {
     const params = new URLSearchParams()
-    if (marca) params.set('marca', marca)
-    if (tipo) params.set('tipo', tipo)
+    const q = texto.trim()
+    if (q) params.set('buscar', q)
+    if (provincia) params.set('provincia', provincia)
     if (ciudad) params.set('ciudad', ciudad)
-    router.push('/motos?' + params.toString())
-  }
-
-  const selectStyle = {
-    flex: 1,
-    minWidth: 0,
-    background: 'rgba(30, 35, 64, 0.85)',
-    border: 'none',
-    borderRight: '1px solid rgba(255,255,255,0.15)',
-    color: '#fff',
-    padding: isMobile ? '11px 6px' : '13px 10px',
-    fontSize: isMobile ? '11px' : '12px',
-    fontFamily: 'Montserrat, sans-serif',
-    fontWeight: 600,
-    appearance: 'none' as const,
-    cursor: 'pointer',
-    textTransform: 'uppercase' as const,
+    const qs = params.toString()
+    router.push(qs ? `/motos?${qs}` : '/motos')
   }
 
   const srOnly: React.CSSProperties = {
@@ -56,86 +43,175 @@ export default function Hero({ bannerSlot }: Props) {
     border: 0,
   }
 
-  const heroHeight = isMobile ? '280px' : '400px'
-
   return (
     <>
       <h1 style={srOnly}>Motos usadas y nuevas en Ecuador</h1>
       <p style={srOnly}>
         Compra, vende y publica motos en Quito, Guayaquil, Cuenca y todo el país. Shineray, Honda, Yamaha, Bajaj, Suzuki y más de 20 marcas.
       </p>
-      <div
-        style={{
-          position: 'relative',
-          background: '#1E2340',
-          overflow: 'hidden',
-          width: '100%',
-          height: heroHeight,
-        }}
-      >
-        {bannerSlot}
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: isMobile ? '16px' : '20px',
-            padding: '0 12px',
-            zIndex: 2,
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              width: '100%',
-              maxWidth: '800px',
-              border: '2px solid #E8390E',
-              borderRadius: '4px',
-              overflow: 'hidden',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            <select value={marca} onChange={e => setMarca(e.target.value)} style={selectStyle}>
-              <option value="">Marca</option>
-              <option>Yamaha</option><option>Honda</option><option>Suzuki</option>
-              <option>Kawasaki</option><option>AKT</option><option>Bera</option>
-              <option>TVS</option><option>Shineray</option>
-            </select>
-            <select value={tipo} onChange={e => setTipo(e.target.value)} style={selectStyle}>
-              <option value="">Tipo</option>
-              <option>Urbana</option><option>Naked</option><option>Trail</option>
-              <option>Scooter</option><option>Deportiva</option><option>Crucero</option>
-            </select>
-            <select value={ciudad} onChange={e => setCiudad(e.target.value)} style={selectStyle}>
-              <option value="">Ciudad</option>
-              <option>Quito</option><option>Guayaquil</option><option>Cuenca</option>
-              <option>Ambato</option><option>Loja</option><option>Ibarra</option>
-            </select>
-            <button
-              onClick={handleSearch}
-              style={{
-                background: '#E8390E',
-                color: 'white',
-                border: 'none',
-                padding: isMobile ? '11px 14px' : '13px 28px',
-                fontFamily: 'Montserrat, sans-serif',
-                fontSize: isMobile ? '11px' : '13px',
-                fontWeight: 800,
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-                letterSpacing: isMobile ? '0' : '1px',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
+
+      <div className="hero-wrap">
+        <div className="hero-banner">
+          {bannerSlot}
+        </div>
+        <div className="hero-search-position">
+          <div className="hero-search-bar">
+            <input
+              type="text"
+              value={texto}
+              onChange={e => setTexto(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearch() }}
+              placeholder="Marca, modelo o lo que busques..."
+              className="hero-search-input"
+              aria-label="Buscar"
+            />
+            <select
+              value={provincia}
+              onChange={e => handleProvinciaChange(e.target.value)}
+              className="hero-search-select"
+              aria-label="Provincia"
             >
+              <option value="">Provincia</option>
+              {provincias.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select
+              value={ciudad}
+              onChange={e => setCiudad(e.target.value)}
+              className="hero-search-select"
+              disabled={!provincia}
+              aria-label="Ciudad"
+            >
+              <option value="">Ciudad</option>
+              {ciudades.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button onClick={handleSearch} className="hero-search-btn">
               Buscar
             </button>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .hero-wrap {
+          position: relative;
+        }
+        .hero-banner {
+          position: relative;
+          background: #1E2340;
+          overflow: hidden;
+          width: 100%;
+          aspect-ratio: 820 / 312;
+        }
+        .hero-search-position {
+          background: #1E2340;
+          padding: 14px 12px;
+          display: flex;
+          justify-content: center;
+        }
+        .hero-search-bar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          width: 100%;
+          max-width: 900px;
+        }
+        .hero-search-input,
+        .hero-search-select,
+        .hero-search-btn {
+          border: 2px solid #E8390E;
+          border-radius: 4px;
+          box-sizing: border-box;
+          font-family: Montserrat, sans-serif;
+        }
+        .hero-search-input {
+          flex: 1 1 100%;
+          min-width: 0;
+          padding: 11px 12px;
+          font-size: 13px;
+          font-weight: 600;
+          background: rgba(30, 35, 64, 0.92);
+          color: #fff;
+          outline: none;
+        }
+        .hero-search-input::placeholder {
+          color: rgba(255, 255, 255, 0.55);
+        }
+        .hero-search-select {
+          flex: 1 1 0;
+          min-width: 0;
+          padding: 11px 6px;
+          font-size: 11px;
+          font-weight: 600;
+          background: rgba(30, 35, 64, 0.92);
+          color: #fff;
+          text-transform: uppercase;
+          appearance: none;
+          -webkit-appearance: none;
+          cursor: pointer;
+        }
+        .hero-search-select:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+        .hero-search-btn {
+          flex: 0 0 auto;
+          padding: 11px 18px;
+          background: #E8390E;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 800;
+          text-transform: uppercase;
+          cursor: pointer;
+        }
+        @media (min-width: 720px) {
+          .hero-banner {
+            aspect-ratio: auto;
+            height: 400px;
+          }
+          .hero-search-position {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 20px;
+            padding: 0 12px;
+            background: transparent;
+            z-index: 2;
+          }
+          .hero-search-bar {
+            gap: 0;
+            border: 2px solid #E8390E;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(4px);
+          }
+          .hero-search-input,
+          .hero-search-select,
+          .hero-search-btn {
+            border: none;
+            border-radius: 0;
+          }
+          .hero-search-input,
+          .hero-search-select {
+            border-right: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(30, 35, 64, 0.85);
+          }
+          .hero-search-input {
+            flex: 1 1 0;
+            padding: 13px 14px;
+            font-size: 14px;
+          }
+          .hero-search-select {
+            padding: 13px 10px;
+            font-size: 12px;
+          }
+          .hero-search-btn {
+            padding: 13px 28px;
+            font-size: 13px;
+            letter-spacing: 1px;
+          }
+        }
+      `}</style>
     </>
   )
 }

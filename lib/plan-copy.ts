@@ -28,7 +28,7 @@ export function getPlanCopy(plan: PlanForCopy): PlanCopy {
   if (plan.id === 'gratis') {
     return {
       features: [
-        { text: `1 anuncio gratis cada ${plan.cooldownDays} días` },
+        { text: '3 publicaciones gratis (cupo de por vida)' },
         { text: `${plan.durationDays} días de publicación` },
         { text: `Hasta ${plan.maxPhotos} fotos` },
         { text: 'Visible en catálogo' },

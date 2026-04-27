@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { publicListingFilter, publicListingDealerInclude } from '@/lib/listings-public'
 import { getCiudadesForMarca } from '@/lib/category-queries'
 import { buildCollectionPage, buildBreadcrumbList } from '@/lib/category-jsonld'
 import CategoryView from '@/app/components/CategoryView'
@@ -12,7 +13,8 @@ async function getData(marcaSlug: string) {
   const brand = await prisma.motoBrand.findUnique({ where: { slug: marcaSlug } })
   if (!brand) return null
   const listings = await prisma.listing.findMany({
-    where: { estado: 'activo', marca: brand.name },
+    where: { estado: 'activo', marca: brand.name, ...publicListingFilter() },
+    include: publicListingDealerInclude,
     orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],
     take: 48,
   })

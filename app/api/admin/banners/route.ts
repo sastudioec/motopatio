@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if (!title || !imageUrl || !position || !startDate || !endDate) {
     return NextResponse.json({ error: 'Campos obligatorios: title, imageUrl, position, startDate, endDate' }, { status: 400 })
   }
-  if (!['hero', 'mid_left', 'mid_right', 'motos_hero', 'motos_mid_left', 'motos_mid_right'].includes(position)) {
+  if (!['hero', 'mid_left', 'mid_right', 'motos_hero', 'motos_mid_left', 'motos_mid_right', 'dealers_hero', 'dealers_mid_left', 'dealers_mid_right'].includes(position)) {
     return NextResponse.json({ error: 'Posición inválida' }, { status: 400 })
   }
 

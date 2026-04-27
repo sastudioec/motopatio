@@ -36,26 +36,39 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: '/auth/login', error: '/auth/error' },
   events: {
     async createUser({ user }) {
+      // Si la signup es como dealer, no mandamos welcome generico ni notif admin
+      // de "nuevo usuario" — el wizard de dealer manda su propio welcome y
+      // notifica a admin con los datos del concesionario.
+      let signupAsDealer = false
       try {
-        if (user.email && user.name) {
-          await sendWelcomeEmail(user.email, user.name)
-        }
-      } catch (e) {
-        console.error('Email bienvenida error:', e)
-      }
-      if (user.email) {
+        const cookieStore = await cookies()
+        signupAsDealer = cookieStore.get('mp_intent_dealer')?.value === '1'
+      } catch { /* fuera de request scope */ }
+
+      if (!signupAsDealer) {
         try {
-          const nombre = user.name || 'usuario'
-          const adminBody = '<h3>Nuevo usuario</h3><ul>'
-            + '<li><strong>Nombre:</strong> ' + nombre + '</li>'
-            + '<li><strong>Email:</strong> ' + user.email + '</li>'
-            + '<li><strong>Provider:</strong> google</li>'
-            + '<li><strong>Verificado:</strong> sí</li>'
-            + '</ul>'
-          await notifyAdmin('[MotoPatio][Usuario] Nuevo: ' + nombre + ' (' + user.email + ')', adminBody)
+          if (user.email && user.name) {
+            await sendWelcomeEmail(user.email, user.name)
+          }
         } catch (e) {
-          console.error('[notifyAdmin] usuario google:', e)
+          console.error('Email bienvenida error:', e)
         }
+        if (user.email) {
+          try {
+            const nombre = user.name || 'usuario'
+            const adminBody = '<h3>Nuevo usuario</h3><ul>'
+              + '<li><strong>Nombre:</strong> ' + nombre + '</li>'
+              + '<li><strong>Email:</strong> ' + user.email + '</li>'
+              + '<li><strong>Provider:</strong> google</li>'
+              + '<li><strong>Verificado:</strong> sí</li>'
+              + '</ul>'
+            await notifyAdmin('[MotoPatio][Usuario] Nuevo: ' + nombre + ' (' + user.email + ')', adminBody)
+          } catch (e) {
+            console.error('[notifyAdmin] usuario google:', e)
+          }
+        }
+      } else {
+        console.log('[createUser] signup as dealer — skipping generic welcome (' + user.email + ')')
       }
       try {
         await prisma.user.update({
@@ -99,6 +112,17 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findUnique({ where: { email: token.email } })
         token.role = dbUser?.role || 'user'
       }
+      // Resolver dealerId solo si el rol es dealer y aun no esta en el token.
+      // Tras el onboarding se fuerza signOut + relogin, asi que la primera
+      // vez que el dealer aparezca con role='dealer' se hace 1 query y queda
+      // cacheado en el JWT hasta el proximo login.
+      if (token.role === 'dealer' && !(token as any).dealerId && token.email) {
+        const dealer = await prisma.dealer.findFirst({
+          where: { user: { email: token.email } },
+          select: { id: true },
+        })
+        if (dealer) (token as any).dealerId = dealer.id
+      }
       return token
     },
     async session({ session, token }) {
@@ -106,6 +130,7 @@ export const authOptions: NextAuthOptions = {
         const u = session.user as any
         u.id = token.sub ?? ''
         u.role = token.role
+        if ((token as any).dealerId) u.dealerId = (token as any).dealerId
       }
       return session
     },

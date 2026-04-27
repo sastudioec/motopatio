@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { PROVINCIAS_ECUADOR, getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 import { getPlanCopy, getPlanCtaLabel } from '@/lib/plan-copy'
 import { openCajita, type CajitaConfig } from '@/lib/cajita'
+import MotoFormFields from '@/app/components/MotoFormFields'
 
 type PlanCatalog = {
   id: string
@@ -51,8 +52,8 @@ function PublicarContent() {
   const [cajitaLoading, setCajitaLoading] = useState(false)
   const [cajitaOpened, setCajitaOpened] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
-  const [hasFreeActive, setHasFreeActive] = useState(false)
-  const [freeCooldownDays, setFreeCooldownDays] = useState(0)
+  const [freeUsedCount, setFreeUsedCount] = useState(0)
+  const [freeLimit, setFreeLimit] = useState(3)
 
   useEffect(() => {
     fetch('/api/plans')
@@ -88,12 +89,12 @@ function PublicarContent() {
   useEffect(() => {
     if (!session?.user?.email) return
     fetch('/api/listings/free-active', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : { hasFreeActive: false, daysRemaining: 0 })
+      .then(r => r.ok ? r.json() : { usedCount: 0, limit: 3 })
       .then(d => {
-        setHasFreeActive(!!d.hasFreeActive)
-        setFreeCooldownDays(typeof d.daysRemaining === 'number' ? d.daysRemaining : 0)
+        setFreeUsedCount(typeof d.usedCount === 'number' ? d.usedCount : 0)
+        setFreeLimit(typeof d.limit === 'number' ? d.limit : 3)
       })
-      .catch(() => { setHasFreeActive(false); setFreeCooldownDays(0) })
+      .catch(() => { setFreeUsedCount(0); setFreeLimit(3) })
   }, [session])
 
   // Cargar draft guardado si venimos de un reintento (?retry=paymentId)
@@ -562,9 +563,8 @@ function PublicarContent() {
             const isPopular = !!copy.badge
             const isGratis = plan.id === 'gratis'
             const isPaidBlocked = !paidPlansEnabled && plan.priceCents > 0
-            const freeActiveBlock = isGratis && hasFreeActive
-            const freeCooldownBlock = isGratis && !hasFreeActive && freeCooldownDays > 0
-            const freeBlocked = freeActiveBlock || freeCooldownBlock
+            const freeLimitReached = isGratis && freeUsedCount >= freeLimit
+            const freeBlocked = freeLimitReached
             const planDisabled = blocked || isLoadingVerif || freeBlocked || isPaidBlocked
             return (
               <div key={plan.id}
@@ -627,14 +627,9 @@ function PublicarContent() {
                     {getPlanCtaLabel(plan)}
                   </button>
                 )}
-                {freeActiveBlock && (
+                {freeLimitReached && (
                   <div style={{fontSize:'11px',color:'#666',marginTop:'8px',lineHeight:1.4}}>
-                    Ya tienes un anuncio gratuito activo. Espera a que expire, o elige Básico o Full.
-                  </div>
-                )}
-                {freeCooldownBlock && (
-                  <div style={{fontSize:'11px',color:'#666',marginTop:'8px',lineHeight:1.4}}>
-                    Ya usaste tu anuncio gratis. Podrás publicar gratis de nuevo en {freeCooldownDays} día{freeCooldownDays === 1 ? '' : 's'}, o elige Básico/Full para publicar ahora.
+                    Has usado tus {freeLimit} publicaciones gratuitas. Pronto tendremos planes para que sigas publicando.
                   </div>
                 )}
               </div>
@@ -705,215 +700,28 @@ function PublicarContent() {
 
         {(isEditMode || selectedPlan) && (
           <fieldset disabled={blocked || isLoadingVerif} style={{border:'none',padding:0,margin:0, opacity: blocked ? 0.55 : 1, pointerEvents: blocked ? 'none' : 'auto'}}>
-            <div style={{background:'#fff',borderRadius:'8px',padding:'28px',border:'1px solid #e8e8e8',marginBottom:'16px'}}>
-              <div style={{fontSize:'14px',fontWeight:800,color:'#1E2340',textTransform:'uppercase',marginBottom:'20px'}}>Datos de la moto</div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
-                <div data-error={!!errors.marca}>
-                  <label style={labelStyle}>Marca *</label>
-                  <select
-                    value={form.marca}
-                    onChange={e=>{
-                      const marca = e.target.value
-                      // Si eligio "Otra", automaticamente modelo = "Otra" y no aparece el select
-                      if (marca === 'Otra') {
-                        setForm({...form, marca, modelo: 'Otra'})
-                      } else {
-                        setForm({...form, marca, modelo: ''})
-                      }
-                    }}
-                    disabled={brandsLoading || isEditMode}
-                    style={inputStyle(!!errors.marca, isEditMode)}
-                  >
-                    <option value="">{brandsLoading ? 'Cargando marcas...' : 'Selecciona'}</option>
-                    {brands.map(b=><option key={b.id} value={b.name}>{b.name}</option>)}
-                  </select>
-                  {errors.marca && <div style={errorStyle}>{errors.marca}</div>}
-                  {lockedHelper}
-                </div>
-                {form.marca && form.marca !== 'Otra' && (
-                  <div data-error={!!errors.modelo}>
-                    <label style={labelStyle}>Modelo *</label>
-                    <select
-                      value={form.modelo}
-                      onChange={e=>setForm({...form, modelo: e.target.value})}
-                      disabled={modelsLoading || models.length === 0 || isEditMode}
-                      style={inputStyle(!!errors.modelo, isEditMode)}
-                    >
-                      <option value="">{modelsLoading ? 'Cargando modelos...' : 'Selecciona modelo'}</option>
-                      {models.map(m=><option key={m.id} value={m.name}>{m.name}</option>)}
-                    </select>
-                    {errors.modelo && <div style={errorStyle}>{errors.modelo}</div>}
-                    {lockedHelper}
-                  </div>
-                )}
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
-                <div data-error={!!errors.anio}>
-                  <label style={labelStyle}>Año *</label>
-                  <input type="text" inputMode="numeric" value={form.anio}
-                    onChange={e=>setForm({...form,anio:e.target.value.replace(/\D/g,'').slice(0,4)})}
-                    disabled={isEditMode}
-                    style={inputStyle(!!errors.anio, isEditMode)} placeholder={String(CURRENT_YEAR)} />
-                  {errors.anio && <div style={errorStyle}>{errors.anio}</div>}
-                  {lockedHelper}
-                </div>
-                <div data-error={!!errors.cilindraje}>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'6px'}}>
-                    <label style={{...labelStyle, marginBottom:0}}>{form.esElectrica ? 'Potencia' : 'Cilindraje'} *</label>
-                    <label style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px',color:'#555',cursor:'pointer',userSelect:'none'}}>
-                      <input
-                        type="checkbox"
-                        checked={form.esElectrica}
-                        onChange={e=>setForm({...form, esElectrica: e.target.checked, cilindraje: '', cilindrajeOtro: ''})}
-                        disabled={isEditMode}
-                        style={{margin:0, cursor: isEditMode ? 'not-allowed' : 'pointer'}}
-                      />
-                      ⚡ Eléctrica
-                    </label>
-                  </div>
-                  <select value={form.cilindraje} onChange={e=>setForm({...form,cilindraje:e.target.value, cilindrajeOtro: e.target.value === 'Otro' ? form.cilindrajeOtro : ''})}
-                    disabled={isEditMode}
-                    style={inputStyle(!!errors.cilindraje, isEditMode)}>
-                    <option value="">Selecciona</option>
-                    {(form.esElectrica ? potenciasElectricas : cilindradas).map(c=><option key={c}>{c}</option>)}
-                  </select>
-                  {form.cilindraje === 'Otro' && (
-                    <input
-                      type="text"
-                      value={form.cilindrajeOtro}
-                      onChange={e=>setForm({...form, cilindrajeOtro: e.target.value.slice(0,20)})}
-                      placeholder={form.esElectrica ? 'Ej: 7 kW' : 'Ej: 180cc'}
-                      maxLength={20}
-                      disabled={isEditMode}
-                      style={{...inputStyle(!!errors.cilindraje, isEditMode), marginTop:'6px'}}
-                    />
-                  )}
-                  {errors.cilindraje && <div style={errorStyle}>{errors.cilindraje}</div>}
-                  {lockedHelper}
-                </div>
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
-                <div data-error={!!errors.tipo}>
-                  <label style={labelStyle}>Tipo *</label>
-                  <select value={form.tipo} onChange={e=>setForm({...form,tipo:e.target.value})}
-                    disabled={isEditMode}
-                    style={inputStyle(!!errors.tipo, isEditMode)}>
-                    <option value="">Selecciona</option>
-                    {tipos.map(t=><option key={t}>{t}</option>)}
-                  </select>
-                  {errors.tipo && <div style={errorStyle}>{errors.tipo}</div>}
-                  {lockedHelper}
-                </div>
-                <div data-error={!!errors.km}>
-                  <label style={labelStyle}>Kilometraje *</label>
-                  <input type="text" inputMode="numeric" value={form.km}
-                    onChange={e=>setForm({...form,km:onlyDigits(e.target.value,999999)})}
-                    style={inputStyle(!!errors.km)} placeholder="15000" />
-                  {errors.km && <div style={errorStyle}>{errors.km}</div>}
-                </div>
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
-                <div data-error={!!errors.precio}>
-                  <label style={labelStyle}>Precio ($) *</label>
-                  <input type="text" inputMode="numeric" value={form.precio}
-                    onChange={e=>setForm({...form,precio:onlyDigits(e.target.value,99999)})}
-                    style={inputStyle(!!errors.precio)} placeholder="3500" />
-                  {errors.precio && <div style={errorStyle}>{errors.precio}</div>}
-                </div>
-                <div data-error={!!errors.provincia}>
-                  <label style={labelStyle}>Provincia *</label>
-                  <select
-                    value={form.provincia}
-                    onChange={e=>setForm({...form, provincia: e.target.value, ciudad: ''})}
-                    disabled={isEditMode}
-                    style={inputStyle(!!errors.provincia, isEditMode)}
-                  >
-                    <option value="">Selecciona</option>
-                    {getProvincias().map(p=><option key={p} value={p}>{p}</option>)}
-                  </select>
-                  {errors.provincia && <div style={errorStyle}>{errors.provincia}</div>}
-                  {lockedHelper}
-                </div>
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
-                <div data-error={!!errors.ciudad}>
-                  <label style={labelStyle}>Ciudad *</label>
-                  <select
-                    value={form.ciudad}
-                    onChange={e=>setForm({...form, ciudad: e.target.value})}
-                    disabled={!form.provincia || isEditMode}
-                    style={inputStyle(!!errors.ciudad, isEditMode)}
-                  >
-                    <option value="">{form.provincia ? 'Selecciona ciudad' : 'Selecciona provincia primero'}</option>
-                    {form.provincia && getCiudadesByProvincia(form.provincia).map(c=><option key={c} value={c}>{c}</option>)}
-                  </select>
-                  {errors.ciudad && <div style={errorStyle}>{errors.ciudad}</div>}
-                  {lockedHelper}
-                </div>
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'16px',marginBottom:'16px'}}>
-                <div data-error={!!errors.color}>
-                  <label style={labelStyle}>Color *</label>
-                  <select
-                    value={form.color}
-                    onChange={e=>setForm({...form, color: e.target.value})}
-                    disabled={isEditMode}
-                    style={inputStyle(!!errors.color, isEditMode)}
-                  >
-                    <option value="">Selecciona</option>
-                    {colores.map(col=><option key={col} value={col}>{col}</option>)}
-                  </select>
-                  {errors.color && <div style={errorStyle}>{errors.color}</div>}
-                  {lockedHelper}
-                </div>
-                <div data-error={!!errors.placa}>
-                  <label style={labelStyle}>Placa * <span style={{fontWeight:400,color:'#888'}}>(Ecuador)</span></label>
-                  <input value={form.placa} onChange={e=>setForm({...form,placa:formatPlaca(e.target.value)})}
-                    disabled={isEditMode}
-                    style={{...inputStyle(!!errors.placa, isEditMode), textTransform:'uppercase', letterSpacing:'1px'}}
-                    placeholder="ABC-1234" maxLength={8} />
-                  {errors.placa && <div style={errorStyle}>{errors.placa}</div>}
-                  {lockedHelper}
-                </div>
-              </div>
-              <div data-error={!!errors.descripcion}>
-                <label style={labelStyle}>
-                  Descripción <span style={{fontWeight:400,color:'#888'}}>({form.descripcion.length}/500)</span>
-                </label>
-                <textarea value={form.descripcion} onChange={e=>setForm({...form,descripcion:e.target.value.slice(0,500)})} rows={4}
-                  style={{...inputStyle(!!errors.descripcion), height:'auto', padding:'10px 12px', resize:'vertical'}}
-                  placeholder="Describe el estado, accesorios, historial de mantenimiento..." />
-                {errors.descripcion && <div style={errorStyle}>{errors.descripcion}</div>}
-              </div>
-            </div>
-
-            <div style={{background:'#fff',borderRadius:'8px',padding:'28px',border: errors.fotos ? '1px solid #dc2626' : '1px solid #e8e8e8',marginBottom:'16px'}}>
-              <div style={{fontSize:'14px',fontWeight:800,color:'#1E2340',textTransform:'uppercase',marginBottom:'20px'}}>Fotos *</div>
-              <div style={{border:'2px dashed #e0e0e0',borderRadius:'8px',padding:'32px',textAlign:'center',marginBottom:'16px'}}>
-                <div style={{fontSize:'32px',marginBottom:'8px'}}>📷</div>
-                <div style={{fontSize:'13px',color:'#666',marginBottom:'12px'}}>
-                  {isEditMode ? 'Actualiza tus fotos (' + fotos.length + ')' : 'Sube hasta ' + selectedPlan!.maxPhotos + ' fotos con el plan ' + selectedPlan!.name + ' (' + fotos.length + '/' + selectedPlan!.maxPhotos + ')'}
-                </div>
-                <label style={{background:'#E8390E',color:'white',padding:'10px 24px',borderRadius:'4px',fontSize:'13px',fontWeight:700,cursor:'pointer',display:'inline-block'}}>
-                  {uploading ? 'Subiendo...' : 'Seleccionar fotos'}
-                  <input type="file" multiple accept="image/*" onChange={handleFoto} style={{display:'none'}} disabled={uploading || (!isEditMode && fotos.length >= (selectedPlan?.maxPhotos || 8))} />
-                </label>
-              </div>
-              {errors.fotos && <div style={errorStyle}>{errors.fotos}</div>}
-              {fotos.length > 0 && (
-                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px',marginTop:'12px'}}>
-                  {fotos.map((url,i) => (
-                    <div key={i} style={{position:'relative'}}>
-                      <img src={url} style={{width:'100%',height:'80px',objectFit:'cover',borderRadius:'4px'}} />
-                      <button type="button" onClick={()=>setFotos(fotos.filter((_,j)=>j!==i))}
-                        style={{position:'absolute',top:'4px',right:'4px',background:'#E8390E',color:'white',border:'none',borderRadius:'50%',width:'20px',height:'20px',cursor:'pointer',fontSize:'11px',fontWeight:700}}>
-                        x
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <MotoFormFields
+              form={form}
+              setForm={setForm}
+              errors={errors}
+              brands={brands}
+              models={models}
+              brandsLoading={brandsLoading}
+              modelsLoading={modelsLoading}
+              fotos={fotos}
+              setFotos={setFotos}
+              uploading={uploading}
+              handleFoto={handleFoto}
+              maxPhotos={selectedPlan?.maxPhotos || 8}
+              lockedFields={isEditMode
+                ? ['marca', 'modelo', 'anio', 'cilindraje', 'tipo', 'provincia', 'ciudad', 'color', 'placa', 'esElectrica']
+                : []}
+              lockedHelperText={isEditMode ? 'No se puede modificar después de publicar. Contacta soporte si necesitas cambiarlo.' : undefined}
+              fotosHelpText={isEditMode
+                ? `Actualiza tus fotos (${fotos.length})`
+                : `Sube hasta ${selectedPlan!.maxPhotos} fotos con el plan ${selectedPlan!.name} (${fotos.length}/${selectedPlan!.maxPhotos})`
+              }
+            />
 
             {publishError && (
               <div style={{background:'#fee2e2',border:'1px solid #dc2626',borderRadius:'8px',padding:'14px 18px',marginBottom:'16px',color:'#991b1b',fontSize:'13px',fontWeight:600}}>

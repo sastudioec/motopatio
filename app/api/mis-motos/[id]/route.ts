@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logListingAction, diffFields } from '@/lib/listing-audit'
 
-const ESTADOS_VALIDOS = ['activo', 'suspendido']
+const ESTADOS_VALIDOS = ['activo', 'suspendido', 'vendido']
 
 // Verifica sesión + ownership
 async function verificarDueno(id: string) {
@@ -90,6 +91,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data,
     })
 
+    // Audit: detectar cambios sobre los campos modificables y elegir action.
+    // Si tocaste estado=vendido es 'marked_sold'; si solo tocaste estado es
+    // 'status_changed'; sino 'updated'.
+    const changes = diffFields(check.listing as any, data, ['estado', 'precio', 'km', 'descripcion', 'fotos'])
+    let action: 'updated' | 'status_changed' | 'marked_sold' = 'updated'
+    if (changes.estado) {
+      action = changes.estado.to === 'vendido' ? 'marked_sold' : 'status_changed'
+    }
+    await logListingAction({
+      listingId: id,
+      userId: check.user.id,
+      action,
+      changes,
+      req,
+    })
+
     return NextResponse.json({ ok: true, listing: updated })
   } catch (e) {
     console.error('PATCH mis-motos error:', e)
@@ -98,12 +115,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 // DELETE: eliminar la publicacion
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const check = await verificarDueno(id)
   if ('error' in check) return NextResponse.json({ error: check.error }, { status: check.status })
 
   try {
+    // Audit ANTES del delete (la FK queda con SET NULL para preservar histórico).
+    await logListingAction({
+      listingId: id,
+      userId: check.user.id,
+      action: 'deleted',
+      changes: {
+        marca: check.listing.marca, modelo: check.listing.modelo, anio: check.listing.anio,
+        precio: check.listing.precio, estado: check.listing.estado,
+      },
+      req,
+    })
     await prisma.listing.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (e) {

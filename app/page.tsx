@@ -4,6 +4,7 @@ import Hero from './components/Hero'
 import Banner from './components/Banner'
 import MotoCard from './components/MotoCard'
 import { prisma } from '@/lib/prisma'
+import { publicListingFilter, publicListingDealerInclude } from '@/lib/listings-public'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -72,7 +73,9 @@ async function getDestacadas() {
       where: {
         estado: 'activo',
         destacadoHasta: { gt: new Date() },
+        ...publicListingFilter(),
       },
+      include: publicListingDealerInclude,
       orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],
     })
     return shuffle(all)
@@ -87,7 +90,9 @@ async function getRecientes(excludeIds: string[]) {
       where: {
         estado: 'activo',
         id: { notIn: excludeIds },
+        ...publicListingFilter(),
       },
+      include: publicListingDealerInclude,
       orderBy: { createdAt: 'desc' },
       take: 8,
     })
