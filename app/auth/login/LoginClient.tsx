@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,6 +14,7 @@ function isSafeRelativeUrl(s: string | null): boolean {
 
 export default function LoginPage() {
   const router = useRouter()
+  const { status } = useSession()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -40,6 +41,17 @@ export default function LoginPage() {
 
   // /auth/post-login decide a donde mandar al usuario segun rol + next.
   const postLoginUrl = '/auth/post-login' + (nextParam ? '?next=' + encodeURIComponent(nextParam) : '')
+
+  // Si el user ya tiene sesion activa al aterrizar en /auth/login (e.g.
+  // login en otro tab, navegacion atras tras Google OAuth, callback
+  // redireccionado mal), salir directo a post-login en lugar de mostrar
+  // el form. Sin esto, el navbar ya muestra al user logueado pero la
+  // pagina sigue mostrando el form de login.
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace(postLoginUrl)
+    }
+  }, [status, postLoginUrl, router])
 
   const [loading, setLoading] = useState(false)
 
