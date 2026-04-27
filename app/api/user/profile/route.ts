@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
+const DEALER_PROFILE_ERROR = 'Los concesionarios deben gestionar su perfil desde /mi-tienda/perfil'
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -13,18 +15,29 @@ export async function GET() {
       id: true, name: true, lastName: true, email: true, phone: true,
       ciudad: true, provincia: true, bio: true, avatar: true, gender: true, birthDate: true,
       phoneVerified: true, cedulaVerified: true, createdAt: true,
-      password: true,
+      role: true, password: true,
     },
   })
   if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+  if (user.role === 'dealer') {
+    return NextResponse.json({ error: DEALER_PROFILE_ERROR }, { status: 403 })
+  }
   const hasPassword = !!user.password
-  const { password, ...safeUser } = user
+  const { password, role, ...safeUser } = user
   return NextResponse.json({ user: { ...safeUser, hasPassword } })
 }
 
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  const requester = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { role: true },
+  })
+  if (!requester) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+  if (requester.role === 'dealer') {
+    return NextResponse.json({ error: DEALER_PROFILE_ERROR }, { status: 403 })
+  }
   const body = await req.json()
   const { name, lastName, phone, ciudad, provincia, bio, gender, birthDate, avatar } = body
 
