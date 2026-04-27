@@ -37,6 +37,11 @@ export default function WhatsAppLeadModal({
   const [financiamiento, setFinanciamiento] = useState<'si' | 'no' | ''>('')
   const [opening, setOpening] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Cuando el modal pre-llena datos del perfil, forzamos remount del
+  // PhoneInput con un key distinto. Sin esto, si el componente ya se
+  // montó con value vacío, no re-evalúa el país al recibir un E.164
+  // y el selector queda sin bandera, rompiendo la validación.
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   // Track apertura del modal
   useEffect(() => {
@@ -53,7 +58,10 @@ export default function WhatsAppLeadModal({
   // Solo rellena campos vacíos: si el user ya tipeó algo, se respeta.
   // Si no está logueado, no hace nada (comportamiento original).
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setProfileLoaded(false)
+      return
+    }
     if (status !== 'authenticated') return
     let cancelled = false
     fetch('/api/user/profile', { credentials: 'include' })
@@ -63,10 +71,12 @@ export default function WhatsAppLeadModal({
         const u = d.user
         const fullName = [u.name, u.lastName].filter(Boolean).join(' ').trim()
         if (fullName) setNombre((prev) => prev || fullName)
-        if (u.phone) setTelefono((prev) => prev || u.phone)
+        const normalizedPhone = normalizePhoneToE164EC(u.phone)
+        if (normalizedPhone) setTelefono((prev) => prev || normalizedPhone)
         if (u.ciudad && CIUDADES_PRINCIPALES.includes(u.ciudad)) {
           setCiudad((prev) => prev || u.ciudad)
         }
+        setProfileLoaded(true)
       })
       .catch(() => {})
     return () => {
@@ -222,6 +232,7 @@ export default function WhatsAppLeadModal({
         <div style={{ marginBottom: '12px' }}>
           <label style={lbl}>Teléfono *</label>
           <PhoneInput
+            key={profileLoaded ? 'prefilled' : 'empty'}
             international
             countryCallingCodeEditable={false}
             defaultCountry="EC"
@@ -301,6 +312,22 @@ function Spinner() {
       <style>{`@keyframes mp-spin { to { transform: rotate(360deg); } }`}</style>
     </span>
   )
+}
+
+/**
+ * Normaliza un teléfono al formato E.164 con prefijo Ecuador.
+ * - Si ya empieza con "+", se devuelve tal cual (cualquier país válido).
+ * - Si no, se asume Ecuador: limpia caracteres no-dígitos y quita el cero
+ *   inicial del formato local antes de prefijar +593.
+ * Devuelve string vacío si no hay dígitos utilizables.
+ */
+function normalizePhoneToE164EC(raw: string | null | undefined): string {
+  if (!raw) return ''
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  if (trimmed.startsWith('+')) return trimmed
+  const digits = trimmed.replace(/[^\d]/g, '').replace(/^0+/, '')
+  return digits ? '+593' + digits : ''
 }
 
 const lbl: React.CSSProperties = {
