@@ -21,7 +21,10 @@ export default async function EditarAnuncioPage({
     where: { email: session.user.email },
     select: { id: true, role: true, dealer: { select: { id: true } } },
   })
-  if (!user || user.role !== 'dealer') redirect('/auth/login?next=/mi-tienda')
+  if (!user) redirect('/auth/login?next=/mi-tienda')
+  // Si el user está logueado pero no es dealer, su gestión vive en /perfil.
+  // Mandarlo a /auth/login generaría loop porque ya tiene sesión válida.
+  if (user.role !== 'dealer') redirect('/perfil')
 
   const listing = await prisma.listing.findUnique({ where: { id } })
   if (!listing) notFound()

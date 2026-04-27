@@ -27,9 +27,11 @@ export default async function MiTiendaPage({
   if (!user || user.blocked) redirect('/auth/login?next=/mi-tienda')
 
   // El JWT puede aun tener role='user' si no hubo relogin tras onboarding;
-  // chequeamos contra la BD para evitar bloqueo falso.
+  // chequeamos contra la BD para evitar bloqueo falso. Si igual no es
+  // dealer, va a /perfil (su lugar correcto), no a /auth/login que con
+  // sesión válida generaría loop.
   if (user.role !== 'dealer') {
-    redirect('/auth/login?next=/mi-tienda')
+    redirect('/perfil')
   }
 
   const dealer = await getDealerByUserId(user.id)

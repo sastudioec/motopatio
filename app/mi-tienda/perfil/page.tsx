@@ -19,7 +19,9 @@ export default async function MiTiendaPerfilPage() {
     select: { id: true, role: true, blocked: true },
   })
   if (!user || user.blocked) redirect('/auth/login?next=/mi-tienda/perfil')
-  if (user.role !== 'dealer') redirect('/auth/login?next=/mi-tienda/perfil')
+  // Si el user está logueado pero no es dealer, su perfil vive en /perfil.
+  // Mandarlo a /auth/login generaría loop porque ya tiene sesión válida.
+  if (user.role !== 'dealer') redirect('/perfil')
 
   const dealer = await getDealerByUserId(user.id)
   if (!dealer) redirect('/dealers/registro')
