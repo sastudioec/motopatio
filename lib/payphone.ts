@@ -201,12 +201,24 @@ export async function querySaleByClientTxId(
     } as PayPhoneConfirmResponse
   }
 
-  let data: PayPhoneConfirmResponse = {}
+  let parsed: unknown
   try {
-    data = JSON.parse(text)
+    parsed = JSON.parse(text)
   } catch {
     throw new Error('PayPhone Sale/client respondio no-JSON: ' + text.slice(0, 500))
   }
+
+  // PayPhone /Sale/client/{clientTxId} devuelve [{...}] (array de 1 elemento),
+  // no un objeto. Desempacamos al primer elemento. Array vacio = misma
+  // semantica que 404 (no hay tx con ese clientTxId).
+  let data: PayPhoneConfirmResponse
+  if (Array.isArray(parsed)) {
+    if (parsed.length === 0) return null
+    data = parsed[0] as PayPhoneConfirmResponse
+  } else {
+    data = (parsed ?? {}) as PayPhoneConfirmResponse
+  }
+
   if (res.status < 200 || res.status >= 300) {
     throw new Error(
       'PayPhone Sale/client fallo ' + res.status + ': ' + (data.message || text.slice(0, 200))
