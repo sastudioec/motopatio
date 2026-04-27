@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import { buildWaMeUrl } from '@/lib/phone'
@@ -29,6 +30,7 @@ export default function WhatsAppLeadModal({
   ctx: LeadModalContext | null
   onSubmitted?: () => void
 }) {
+  const { status } = useSession()
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState<string | undefined>('')
   const [ciudad, setCiudad] = useState('')
@@ -46,6 +48,31 @@ export default function WhatsAppLeadModal({
       }).catch(() => {})
     }
   }, [open, ctx])
+
+  // Pre-llenar el form con datos del perfil cuando el user está logueado.
+  // Solo rellena campos vacíos: si el user ya tipeó algo, se respeta.
+  // Si no está logueado, no hace nada (comportamiento original).
+  useEffect(() => {
+    if (!open) return
+    if (status !== 'authenticated') return
+    let cancelled = false
+    fetch('/api/user/profile', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d?.user) return
+        const u = d.user
+        const fullName = [u.name, u.lastName].filter(Boolean).join(' ').trim()
+        if (fullName) setNombre((prev) => prev || fullName)
+        if (u.phone) setTelefono((prev) => prev || u.phone)
+        if (u.ciudad && CIUDADES_PRINCIPALES.includes(u.ciudad)) {
+          setCiudad((prev) => prev || u.ciudad)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [open, status])
 
   // Bloquear scroll detras del modal
   useEffect(() => {
