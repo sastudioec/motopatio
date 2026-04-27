@@ -17,8 +17,8 @@ export async function GET() {
 
   const state = await getFreePlanState(user.id)
   return NextResponse.json({
-    hasFreeActive: state.hasFreeActive,
-    cooldownUntil: state.cooldownUntil,
-    daysRemaining: state.daysRemaining,
+    usedCount: state.usedCount,
+    limit: state.limit,
+    canPublish: state.canPublish,
   })
 }
