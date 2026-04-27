@@ -17,14 +17,16 @@ export async function sendWelcomeEmail(to: string, name: string) {
     '&#x1F3CD; &iexcl;Bienvenido a MotoPatio, ' + n + '!</h2>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;text-align:center;margin:0 0 20px;">' +
     'Tu correo fue verificado. Ya eres parte del patio de motos digital del Ecuador.</p>' +
-    '<div style="background:#f9f9fb;border-radius:8px;padding:20px;margin:0 0 20px;">' +
-    '<p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#1a1f36;">Ahora puedes:</p>' +
-    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Publicar tu moto y llegar a miles de compradores</p>' +
-    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Buscar motos en todo el Ecuador</p>' +
-    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Contactar directamente con vendedores</p>' +
-    '<p style="margin:0;font-size:14px;color:#3f3f46;">&#10003; Destacar tu anuncio para vender mas rapido</p>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 12px;">' +
+    'Antes de publicar o contactar vendedores, completa tu perfil:</p>' +
+    '<div style="background:#f9f9fb;border-radius:8px;padding:20px;margin:0 0 16px;">' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Tu nombre y apellido</p>' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Teléfono y ciudad</p>' +
+    '<p style="margin:0;font-size:14px;color:#3f3f46;">&#10003; Foto de perfil (opcional)</p>' +
     '</div>' +
-    btn(BASE + '/publicar', 'Publicar mi moto ahora')
+    '<p style="font-size:14px;color:#52525b;line-height:1.6;margin:0 0 8px;">' +
+    'Así, cuando contactes a un vendedor o publiques tu primera moto, tus datos ya quedan listos.</p>' +
+    btn(BASE + '/perfil', 'Completa tu perfil')
   return resend.emails.send({
     from: 'MotoPatio <noreply@motopatio.com>',
     to,
