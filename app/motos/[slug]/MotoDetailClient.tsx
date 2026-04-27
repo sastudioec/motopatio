@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Breadcrumb from '@/app/components/Breadcrumb'
 import { calcularPicoYPlaca } from '@/lib/picoyplaca'
+import WhatsAppLeadModal, { type LeadModalContext } from '@/app/components/WhatsAppLeadModal'
+import { normalizeEcuadorPhone } from '@/lib/phone'
 
 function truncateLabel(s: string, max: number): string {
   return s.length > max ? s.slice(0, max - 1) + '…' : s
@@ -17,7 +19,29 @@ export default function MotoDetailClient({ moto, marcaSlug }: { moto: any; marca
   const [toast, setToast] = useState('')
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [leadModalOpen, setLeadModalOpen] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
+
+  // Numero de WhatsApp del vendedor: dealer pisa al user si el listing es de dealer.
+  // Normalizamos al formato 593XXXXXXXXX (sin + ni 0 inicial) para que wa.me funcione.
+  const sellerWhatsapp = normalizeEcuadorPhone(moto.dealer?.whatsapp || moto.user?.phone)
+  const leadCtx: LeadModalContext = {
+    listingId: moto.id,
+    listingTitle: `${moto.marca} ${moto.modelo} ${moto.anio}`,
+    listingUrl: typeof window !== 'undefined' ? window.location.href : `https://motopatio.com/motos/${moto.slug || moto.id}`,
+    whatsappNumber: sellerWhatsapp,
+    listingOwnerType: moto.dealerId ? 'dealer' : 'user',
+    listingOwnerId: moto.dealerId || moto.userId,
+    dealerId: moto.dealerId || null,
+  }
+  function openLead() {
+    fetch('/api/leads/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'whatsapp_button_clicked', listingId: moto.id, dealerId: moto.dealerId || null }),
+    }).catch(() => {})
+    setLeadModalOpen(true)
+  }
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -242,12 +266,41 @@ export default function MotoDetailClient({ moto, marcaSlug }: { moto: any; marca
 
             {session ? (
               <div style={{background:'#fff',border:'1px solid #e0e0e0',borderRadius:'8px',padding:'16px'}}>
-                <div style={{fontSize:'12px',color:'#888',marginBottom:'4px'}}>Vendedor</div>
-                <div style={{fontSize:'15px',fontWeight:700,color:'#1E2340',marginBottom:'12px'}}>{moto.user?.name || 'Usuario'}</div>
-                <a href={'https://wa.me/593' + (moto.user?.phone || '').replace(/\D/g,'')} target="_blank"
-                  style={{display:'block',background:'#25D366',color:'white',padding:'12px',borderRadius:'4px',fontSize:'14px',fontWeight:800,textDecoration:'none',textAlign:'center'}}>
+                {moto.dealer ? (
+                  <Link
+                    href={'/dealers/' + moto.dealer.slug}
+                    style={{display:'block',textDecoration:'none',color:'inherit',marginBottom:'12px',padding:'10px',background:'#f9fafb',border:'1px solid #ececec',borderRadius:6}}
+                  >
+                    <div style={{fontSize:'10px',color:'#0369A1',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>
+                      🏪 Vendido por concesionario
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                      {moto.dealer.logo ? (
+                        <img src={moto.dealer.logo} alt={moto.dealer.nombreComercial}
+                          style={{width:42,height:42,borderRadius:6,objectFit:'cover',border:'1px solid #ececec'}} />
+                      ) : (
+                        <div style={{width:42,height:42,borderRadius:6,background:'#1E2340',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:16}}>
+                          {moto.dealer.nombreComercial.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:14,fontWeight:800,color:'#1E2340',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                          {moto.dealer.nombreComercial}
+                        </div>
+                        <div style={{fontSize:11,color:'#666'}}>Ver perfil completo →</div>
+                      </div>
+                    </div>
+                  </Link>
+                ) : (
+                  <>
+                    <div style={{fontSize:'12px',color:'#888',marginBottom:'4px'}}>Vendedor</div>
+                    <div style={{fontSize:'15px',fontWeight:700,color:'#1E2340',marginBottom:'12px'}}>{moto.user?.name || 'Usuario'}</div>
+                  </>
+                )}
+                <button type="button" onClick={openLead}
+                  style={{display:'block',width:'100%',background:'#25D366',color:'white',padding:'12px',borderRadius:'4px',fontSize:'14px',fontWeight:800,textDecoration:'none',textAlign:'center',border:'none',cursor:'pointer',textTransform:'uppercase'}}>
                   Contactar por WhatsApp
-                </a>
+                </button>
               </div>
             ) : (
               <div style={{background:'#1E2340',borderRadius:'8px',padding:'16px',textAlign:'center'}}>
@@ -351,6 +404,12 @@ export default function MotoDetailClient({ moto, marcaSlug }: { moto: any; marca
           .grid-detalle { grid-template-columns: 1fr !important; }
         }
       `}</style>
+
+      <WhatsAppLeadModal
+        open={leadModalOpen}
+        onClose={() => setLeadModalOpen(false)}
+        ctx={leadCtx}
+      />
     </div>
   )
 }

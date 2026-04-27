@@ -10,7 +10,16 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [dealersEnabled, setDealersEnabled] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const role = (session?.user as any)?.role as string | undefined
+  const isDealer = role === 'dealer'
+
+  useEffect(() => {
+    fetch('/api/dealers/config').then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.enabled) setDealersEnabled(true)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768)
@@ -39,6 +48,7 @@ export default function Navbar() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/motos', label: 'Motos' },
+    ...(dealersEnabled ? [{ href: '/dealers', label: 'Dealers' }] : []),
     { href: '/precios', label: 'Precios' },
   ]
 
@@ -93,10 +103,17 @@ export default function Navbar() {
                     style={{display:'block',padding:'12px 16px',fontSize:'13px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
                     👤 Mi perfil
                   </Link>
-                  <Link href="/mis-motos" onClick={() => setMenuOpen(false)}
-                    style={{display:'block',padding:'12px 16px',fontSize:'13px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
-                    🏍️ Mis motos
-                  </Link>
+                  {isDealer ? (
+                    <Link href="/mi-tienda" onClick={() => setMenuOpen(false)}
+                      style={{display:'block',padding:'12px 16px',fontSize:'13px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
+                      🏬 Mi Tienda
+                    </Link>
+                  ) : (
+                    <Link href="/mis-motos" onClick={() => setMenuOpen(false)}
+                      style={{display:'block',padding:'12px 16px',fontSize:'13px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
+                      🏍️ Mis motos
+                    </Link>
+                  )}
                   <button onClick={() => { setMenuOpen(false); signOut({ callbackUrl: '/' }) }}
                     style={{display:'block',width:'100%',textAlign:'left',padding:'12px 16px',fontSize:'13px',color:'#E8390E',background:'transparent',border:'none',cursor:'pointer',fontWeight:600}}>
                     🚪 Cerrar sesión
@@ -158,10 +175,17 @@ export default function Navbar() {
                   style={{display:'block',padding:'14px 20px',fontSize:'14px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
                   👤 Mi perfil
                 </Link>
-                <Link href="/mis-motos" onClick={() => setMobileOpen(false)}
-                  style={{display:'block',padding:'14px 20px',fontSize:'14px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
-                  🏍️ Mis motos
-                </Link>
+                {isDealer ? (
+                  <Link href="/mi-tienda" onClick={() => setMobileOpen(false)}
+                    style={{display:'block',padding:'14px 20px',fontSize:'14px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
+                    🏬 Mi Tienda
+                  </Link>
+                ) : (
+                  <Link href="/mis-motos" onClick={() => setMobileOpen(false)}
+                    style={{display:'block',padding:'14px 20px',fontSize:'14px',color:'#1E2340',textDecoration:'none',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
+                    🏍️ Mis motos
+                  </Link>
+                )}
                 <button onClick={() => { setMobileOpen(false); signOut({ callbackUrl: '/' }) }}
                   style={{display:'block',width:'100%',textAlign:'left',padding:'14px 20px',fontSize:'14px',color:'#E8390E',background:'transparent',border:'none',cursor:'pointer',fontWeight:600,borderBottom:'1px solid #f0f0f0'}}>
                   🚪 Cerrar sesión

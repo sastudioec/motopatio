@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { publicListingFilter, publicListingDealerInclude } from '@/lib/listings-public'
 import { puedeCircularElDia } from '@/lib/picoyplaca'
 import Banner from '@/app/components/Banner'
 import Breadcrumb from '@/app/components/Breadcrumb'
@@ -30,6 +31,8 @@ type Filtros = {
   cilindrajes: string[]
   picoyplaca: string
   soloElectricas: boolean
+  soloDealers: boolean
+  dealerSlug: string
   sort: Sort
 }
 
@@ -66,6 +69,8 @@ function parseFiltros(sp: SearchParams): Filtros {
     cilindrajes: csv(one(sp, 'cilindrajes')),
     picoyplaca: one(sp, 'picoyplaca'),
     soloElectricas: one(sp, 'soloElectricas') === '1',
+    soloDealers: one(sp, 'dealers') === '1',
+    dealerSlug: one(sp, 'dealer'),
     sort,
   }
 }
@@ -92,6 +97,14 @@ function buildAndFilters(f: Filtros): any[] {
   if (f.ciudad) ands.push({ ciudad: f.ciudad })
   if (f.tipos.length) ands.push({ tipo: { in: f.tipos } })
   if (f.cilindrajes.length && !f.soloElectricas) ands.push({ cilindraje: { in: f.cilindrajes } })
+  // Filtros de concesionario
+  if (f.dealerSlug) {
+    // Listings de un dealer especifico (aprobado)
+    ands.push({ dealer: { is: { slug: f.dealerSlug, approvalStatus: 'approved', activo: true } } })
+  } else if (f.soloDealers) {
+    // Cualquier listing de dealer aprobado
+    ands.push({ dealer: { is: { approvalStatus: 'approved', activo: true } } })
+  }
   // NOTA: picoyplaca NO va al where; se aplica post-query server-side
   // sobre la página actual (ver bloque más abajo).
   return ands
@@ -131,26 +144,30 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
   const now = new Date()
   const andFilters = buildAndFilters(filtros)
 
+  const dealerOk = publicListingFilter()
   const destacadasWhere: any = {
     estado: 'activo',
     destacadoHasta: { gt: now },
+    ...dealerOk,
     ...(andFilters.length ? { AND: andFilters } : {}),
   }
   const restoAnds = [
     ...andFilters,
     { OR: [{ destacadoHasta: null }, { destacadoHasta: { lte: now } }] },
   ]
-  const restoWhere: any = { estado: 'activo', AND: restoAnds }
+  const restoWhere: any = { estado: 'activo', ...dealerOk, AND: restoAnds }
 
   const [destacadasDB, restoDB, restoCount, marcasDB] = await Promise.all([
     page === 1
       ? prisma.listing.findMany({
           where: destacadasWhere,
+          include: publicListingDealerInclude,
           orderBy: [{ destacadoHasta: 'desc' }, { createdAt: 'desc' }],
         })
       : Promise.resolve([] as any[]),
     prisma.listing.findMany({
       where: restoWhere,
+      include: publicListingDealerInclude,
       orderBy: buildOrderBy(filtros.sort),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -187,6 +204,7 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
     cilindrajes: filtros.cilindrajes,
     picoyplaca: filtros.picoyplaca,
     soloElectricas: filtros.soloElectricas,
+    soloDealers: filtros.soloDealers,
     sort: filtros.sort,
   }
 

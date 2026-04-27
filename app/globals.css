@@ -24,6 +24,42 @@ img {
   height: auto;
 }
 
+/* Inputs/selects/textareas usan border-box global para que width:100%
+   nunca desborde el contenedor sumando padding+border al ancho. */
+input, select, textarea, button {
+  box-sizing: border-box;
+}
+
+/* react-phone-number-input: estilo consistente con el resto del sitio. */
+.mp-phone-input {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: #fff;
+  font-family: inherit;
+}
+.mp-phone-input .PhoneInputCountry {
+  padding: 0 10px;
+  background: #f9fafb;
+  border-right: 1px solid #d0d0d0;
+  border-radius: 4px 0 0 4px;
+}
+.mp-phone-input .PhoneInputInput {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: transparent;
+  border-radius: 0 4px 4px 0;
+}
+.mp-phone-input.invalid {
+  border-color: #E8390E;
+}
+
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
 }

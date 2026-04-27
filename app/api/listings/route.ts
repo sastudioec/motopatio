@@ -11,6 +11,8 @@ import {
 } from '@/lib/plans'
 import { buildListingSlug } from '@/lib/slug'
 import { generateListingPublicId } from '@/lib/public-id'
+import { logListingAction } from '@/lib/listing-audit'
+import { getDealerListingsState } from '@/lib/dealers'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -18,7 +20,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: { dealer: { select: { id: true, approvalStatus: true } } },
+  })
   if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
 
   const body = await req.json()
@@ -46,55 +51,86 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Plan gratis: validar regla de 1 anuncio cada 30 dias + no tener activo
-  if (plan.id === 'gratis') {
+  // Si el user es dealer NO aplican las reglas de cooldown ni maxPhotos del
+  // plan gratis. La permanencia del listing va atada al dealer/suscripcion
+  // (no a la duracion del plan particular). Para dealer rejected, bloqueamos.
+  const isDealer = user.role === 'dealer' && !!user.dealer
+  if (user.role === 'dealer' && (!user.dealer || user.dealer.approvalStatus === 'rejected')) {
+    return NextResponse.json(
+      { error: 'Tu cuenta no esta habilitada para publicar.' },
+      { status: 403 }
+    )
+  }
+
+  // Plan gratis: cupo de por vida (3 publicaciones), solo para particulares.
+  if (plan.id === 'gratis' && !isDealer) {
     const check = await canPublishFreePlan(user.id)
     if (!check.allowed) {
-      const message =
-        check.reason === 'active'
-          ? 'Ya tienes un anuncio gratuito activo. Suspendelo, espera a que expire, o elige Basico/Full.'
-          : `Debes esperar ${check.daysRemaining} dia(s) para publicar gratis de nuevo.`
       return NextResponse.json(
         {
-          error:
-            check.reason === 'active'
-              ? 'Ya tienes un anuncio Gratis activo'
-              : 'Cooldown activo para plan Gratis',
+          error: 'Limite de publicaciones gratuitas alcanzado',
           reason: check.reason,
-          message,
-          nextAvailableAt: check.nextAvailableAt,
-          daysRemaining: check.daysRemaining,
+          message: 'Has usado tus 3 publicaciones gratuitas. Pronto tendremos planes para que sigas publicando.',
+          usedCount: check.usedCount,
+          limit: check.limit,
         },
-        { status: check.reason === 'active' ? 400 : 429 }
+        { status: 403 }
       )
     }
   }
 
-  // Validar limite de fotos segun el plan
+  // Dealer: durante el programa de lanzamiento (trial) cap de 20 motos activas.
+  if (isDealer && user.dealer) {
+    const dealerState = await getDealerListingsState(user.dealer.id)
+    if (!dealerState.canPublish) {
+      return NextResponse.json(
+        {
+          error: 'Limite de motos del programa alcanzado',
+          reason: 'dealer_limit_reached',
+          message: 'Has alcanzado el máximo de 20 motos del programa de lanzamiento. Cuando vendas alguna podrás publicar otra.',
+          activeCount: dealerState.activeCount,
+          limit: dealerState.limit,
+        },
+        { status: 403 }
+      )
+    }
+  }
+
+  // Validar limite de fotos segun el plan (para dealer: limite mas amplio).
   const fotos = Array.isArray(body.fotos) ? body.fotos : []
-  if (fotos.length > plan.maxPhotos) {
+  const dealerMaxPhotos = 15
+  const effectiveMaxPhotos = isDealer ? dealerMaxPhotos : plan.maxPhotos
+  if (fotos.length > effectiveMaxPhotos) {
     return NextResponse.json(
       {
-        error: `Este plan permite maximo ${plan.maxPhotos} fotos.`,
-        maxPhotos: plan.maxPhotos,
+        error: `Maximo ${effectiveMaxPhotos} fotos por anuncio.`,
+        maxPhotos: effectiveMaxPhotos,
         received: fotos.length,
       },
       { status: 400 }
     )
   }
 
-  // Calcular fechas segun el plan
+  // Calcular fechas: dealer usa 365 dias (renovacion atada al dealer).
   const now = new Date()
-  const expiraEn = calcExpiresAt(now, plan.durationDays)
+  const dealerListingDurationDays = 365
+  const expiraEn = calcExpiresAt(now, isDealer ? dealerListingDurationDays : plan.durationDays)
   const destacadoHasta = calcFeaturedUntil(now, plan.featuredDays)
 
   const publicId = await generateListingPublicId()
+
+  // Si el user es dealer, asociar el listing a su Dealer para que aparezca
+  // en /dealers/[slug] y se respete el filtro de approvalStatus en feeds.
+  const dealerConnect = user.role === 'dealer' && user.dealer
+    ? { dealer: { connect: { id: user.dealer.id } } }
+    : {}
 
   // Crear la publicacion (slug se setea justo despues con el id recien creado)
   const listing = await prisma.listing.create({
     data: {
       user: { connect: { id: user.id } },
       plan: { connect: { id: plan.id } },
+      ...dealerConnect,
       publicId,
       marca: body.marca,
       modelo: body.modelo,
@@ -122,28 +158,50 @@ export async function POST(req: NextRequest) {
   await prisma.listing.update({ where: { id: listing.id }, data: { slug } })
   ;(listing as any).slug = slug
 
-  // Si fue plan gratis, actualizar la marca de tiempo para el cooldown
-  if (plan.id === 'gratis') {
+  // Audit: snapshot inicial del listing creado
+  await logListingAction({
+    listingId: listing.id,
+    userId: user.id,
+    action: 'created',
+    changes: {
+      marca: listing.marca, modelo: listing.modelo, anio: listing.anio,
+      precio: listing.precio, ciudad: listing.ciudad, planTipo: listing.planTipo,
+      dealerId: listing.dealerId,
+    },
+    req,
+  })
+
+  // Si fue plan gratis Y es particular, actualizar la marca de tiempo del cooldown
+  if (plan.id === 'gratis' && !isDealer) {
     await prisma.user.update({
       where: { id: user.id },
       data: { lastFreePublicationAt: now },
     })
   }
 
-  // Email de confirmacion (no bloquear si falla)
-  try {
-    await sendMotoPublicadaEmail(
-      user.email,
-      user.name || 'Usuario',
-      {
-        titulo: body.marca + ' ' + body.modelo,
-        slug: (listing as any).slug || listing.id,
-        publicId,
-        precio: parseInt(body.precio) || 0,
-      }
-    )
-  } catch (e) {
-    console.error('Email error:', e)
+  // Email de confirmacion: solo si la moto YA es publica.
+  //   - Particular: siempre publica (manda email)
+  //   - Dealer aprobado: publica (manda email)
+  //   - Dealer pending_approval: NO publica todavia, NO mandar email
+  //     (el email viene cuando admin aprueba el dealer, con resumen)
+  const motoEsPublica = !isDealer || user.dealer?.approvalStatus === 'approved'
+  if (motoEsPublica) {
+    try {
+      await sendMotoPublicadaEmail(
+        user.email,
+        user.name || 'Usuario',
+        {
+          titulo: body.marca + ' ' + body.modelo,
+          slug: (listing as any).slug || listing.id,
+          publicId,
+          precio: parseInt(body.precio) || 0,
+        }
+      )
+    } catch (e) {
+      console.error('Email error:', e)
+    }
+  } else {
+    console.log('[listing creado] dealer pending — skipping moto publicada email (' + listing.id + ')')
   }
 
   try {
@@ -169,9 +227,20 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  // Listings publicos: activos Y (sin dealer O con dealer aprobado).
+  // Los listings de dealers pendientes/rechazados quedan ocultos del feed.
   const listings = await prisma.listing.findMany({
-    where: { estado: 'activo' },
-    include: { user: { select: { name: true, phone: true } } },
+    where: {
+      estado: 'activo',
+      OR: [
+        { dealerId: null },
+        { dealer: { approvalStatus: 'approved', activo: true } },
+      ],
+    },
+    include: {
+      user: { select: { name: true, phone: true } },
+      dealer: { select: { id: true, slug: true, nombreComercial: true, verificado: true, approvalStatus: true } },
+    },
     orderBy: { createdAt: 'desc' },
   })
   return NextResponse.json({ listings })

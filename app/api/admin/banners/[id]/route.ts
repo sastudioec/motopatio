@@ -23,7 +23,7 @@ export async function PATCH(
   if (body.imageUrl !== undefined) data.imageUrl = body.imageUrl
   if (body.linkUrl !== undefined) data.linkUrl = body.linkUrl || null
   if (body.position !== undefined) {
-    if (!['hero', 'mid_left', 'mid_right', 'motos_hero', 'motos_mid_left', 'motos_mid_right'].includes(body.position)) {
+    if (!['hero', 'mid_left', 'mid_right', 'motos_hero', 'motos_mid_left', 'motos_mid_right', 'dealers_hero', 'dealers_mid_left', 'dealers_mid_right'].includes(body.position)) {
       return NextResponse.json({ error: 'Posición inválida' }, { status: 400 })
     }
     data.position = body.position

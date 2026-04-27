@@ -234,3 +234,153 @@ export async function notifyAdmin(subject: string, body: string): Promise<void> 
     html: body,
   })
 }
+
+export async function sendDealerWelcomeEmail(
+  to: string,
+  info: { nombreComercial: string; slug: string; trialEndsAt: Date }
+) {
+  const fecha = new Intl.DateTimeFormat('es-EC', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  }).format(info.trialEndsAt)
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
+    '&#x1F3EA; Bienvenido a MotoPatio Dealers, ' + info.nombreComercial + '!</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;text-align:center;margin:0 0 20px;">' +
+    'Tu concesionario quedo registrado. Estamos revisando tu documentacion para aprobar tu cuenta.</p>' +
+    '<div style="background:#f9f9fb;border-radius:8px;padding:20px;margin:0 0 20px;">' +
+    '<p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#1a1f36;">Tu prueba gratuita</p>' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; 60 dias para probar el panel y publicar anuncios</p>' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; Vence el <strong>' + fecha + '</strong></p>' +
+    '<p style="margin:0;font-size:14px;color:#3f3f46;">&#10003; Antes de esa fecha te enviaremos los planes disponibles</p>' +
+    '</div>' +
+    '<p style="font-size:14px;color:#52525b;line-height:1.6;margin:0 0 16px;">' +
+    'Tu perfil publico ya esta activo en <a href="' + BASE + '/dealers/' + info.slug + '" style="color:#e8572a;font-weight:700;">' + BASE + '/dealers/' + info.slug + '</a>. Cierra sesion y vuelve a entrar para ver el panel "Mi Tienda".</p>' +
+    btn(BASE + '/mi-tienda', 'Ir al panel')
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: 'Bienvenido a MotoPatio Dealers, ' + info.nombreComercial,
+    html: wrap(body),
+  })
+}
+
+export async function sendDealerApprovedEmail(
+  to: string,
+  info: { nombreComercial: string; slug: string; listingsCount?: number }
+) {
+  const count = info.listingsCount ?? 0
+  const motosBlock = count > 0
+    ? '<div style="background:#f9f9fb;border-radius:8px;padding:16px 20px;margin:0 0 20px;">' +
+      '<p style="margin:0;font-size:14px;color:#3f3f46;">&#10003; <strong>' + count + '</strong> ' +
+      (count === 1 ? 'moto que tenias cargada ya esta publica' : 'motos que tenias cargadas ya estan publicas') + ' en MotoPatio.</p>' +
+      '</div>'
+    : ''
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
+    '&#x2705; Tu concesionario fue aprobado</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;text-align:center;margin:0 0 16px;">' +
+    '&iexcl;Felicitaciones, ' + info.nombreComercial + '! Tu cuenta esta aprobada y tu perfil publico ya esta activo.</p>' +
+    motosBlock +
+    btn(BASE + '/dealers/' + info.slug, 'Ver mi perfil publico')
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: 'Tu concesionario fue aprobado en MotoPatio',
+    html: wrap(body),
+  })
+}
+
+export async function sendDealerRejectedEmail(
+  to: string,
+  info: { nombreComercial: string }
+) {
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
+    'Sobre tu solicitud en MotoPatio</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 16px;">' +
+    'Hola ' + info.nombreComercial + ', tu cuenta no pudo ser aprobada en este momento.</p>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 16px;">' +
+    'Contactanos a <a href="mailto:info@motopatio.com" style="color:#e8572a;font-weight:700;">info@motopatio.com</a> para mas informacion sobre los pasos a seguir.</p>'
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: 'Sobre tu solicitud en MotoPatio',
+    html: wrap(body),
+  })
+}
+
+export async function sendDealerApplicationAdminNotification(data: {
+  businessName: string
+  contactName: string
+  email: string
+  phone: string
+  city: string
+  stockRange: string
+  message: string | null
+}) {
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+  const row = (label: string, value: string) =>
+    '<tr><td style="padding:8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;width:140px;vertical-align:top;">' + label + '</td>' +
+    '<td style="padding:8px 0;font-size:14px;color:#1a1f36;font-weight:600;">' + value + '</td></tr>'
+  const mensajeBlock = data.message && data.message.trim()
+    ? '<div style="background:#f9f9fb;border-radius:8px;padding:16px 20px;margin:20px 0 0;border-left:4px solid #e8572a;">' +
+      '<p style="margin:0 0 8px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Mensaje del solicitante</p>' +
+      '<p style="margin:0;font-size:14px;color:#3f3f46;line-height:1.6;">' + escape(data.message).replace(/\n/g, '<br>') + '</p>' +
+      '</div>'
+    : ''
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">Nueva solicitud de concesionario</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 20px;">Llegó una solicitud nueva desde el formulario de <strong>/dealers/programa</strong>.</p>' +
+    '<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#f9f9fb;border-radius:8px;padding:8px 16px;">' +
+    row('Negocio', escape(data.businessName)) +
+    row('Contacto', escape(data.contactName)) +
+    row('Email', '<a href="mailto:' + escape(data.email) + '" style="color:#e8572a;text-decoration:none;font-weight:700;">' + escape(data.email) + '</a>') +
+    row('Teléfono', '<a href="https://wa.me/' + escape(data.phone.replace(/[^\d]/g, '')) + '" style="color:#e8572a;text-decoration:none;font-weight:700;">' + escape(data.phone) + '</a>') +
+    row('Ciudad', escape(data.city)) +
+    row('Stock aprox.', escape(data.stockRange)) +
+    '</table>' +
+    mensajeBlock
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to: ADMIN_EMAIL,
+    replyTo: data.email,
+    subject: 'Nueva solicitud de concesionario — ' + data.businessName,
+    html: wrap(body),
+  })
+}
+
+export async function sendDealerInvitationEmail(to: string) {
+  const waNumber = process.env.GABRIELA_WHATSAPP || '+593 XXX XXX XXX'
+  const waDigits = waNumber.replace(/[^\d]/g, '')
+  const waLink = waDigits ? 'https://wa.me/' + waDigits : ''
+  const waLine = waLink
+    ? 'Si prefieres hablar directo, escríbeme por WhatsApp al <a href="' + waLink + '" style="color:#e8572a;font-weight:700;text-decoration:none;">' + waNumber + '</a>.'
+    : 'Si prefieres hablar directo, escríbeme por WhatsApp al <strong>' + waNumber + '</strong>.'
+  const item = (txt: string) =>
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">&#10003; ' + txt + '</p>'
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">Hola,</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 24px;">Soy <strong>Gabriela</strong>, del equipo de Moto Patio.</p>' +
+    '<div style="text-align:center;margin:0 0 24px;padding:24px 16px;background:#fff5f0;border-radius:12px;border:2px dashed #e8572a;">' +
+    '<p style="margin:0;font-size:24px;font-weight:800;color:#e8572a;line-height:1.25;">Publica las motos de tu concesionario <span style="text-transform:uppercase;">GRATIS</span> por 60 días.</p>' +
+    '</div>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 20px;">Estamos eligiendo a los primeros concesionarios del Ecuador para inaugurar nuestro programa de lanzamiento, y queremos que seas parte.</p>' +
+    '<div style="background:#f9f9fb;border-radius:8px;padding:20px;margin:0 0 20px;">' +
+    '<p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#1a1f36;">El programa incluye:</p>' +
+    item('60 días gratis') +
+    item('Hasta 20 motos publicadas') +
+    item('Tu perfil propio en motopatio.com') +
+    item('Control de leads exportable') +
+    item('Historial completo de tu inventario') +
+    '</div>' +
+    btn(BASE + '/dealers/programa', 'Ver el programa') +
+    '<p style="font-size:14px;color:#52525b;line-height:1.6;margin:24px 0 0;">' + waLine + '</p>' +
+    '<p style="font-size:14px;color:#52525b;line-height:1.6;margin:24px 0 0;">Un saludo,<br><strong>Gabriela</strong><br>Moto Patio · <a href="' + BASE + '" style="color:#e8572a;font-weight:700;text-decoration:none;">motopatio.com</a></p>'
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: 'Publica las motos de tu concesionario gratis en Moto Patio',
+    html: wrap(body),
+  })
+}

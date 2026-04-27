@@ -3,6 +3,7 @@ import { prisma } from './prisma'
 export type BannerPosition =
   | 'hero' | 'mid_left' | 'mid_right'
   | 'motos_hero' | 'motos_mid_left' | 'motos_mid_right'
+  | 'dealers_hero' | 'dealers_mid_left' | 'dealers_mid_right'
 
 /**
  * Elige aleatoriamente un banner activo para la posición dada y

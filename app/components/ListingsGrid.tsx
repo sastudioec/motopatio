@@ -17,7 +17,6 @@ function Card({l}:{l:typeof L[0]}) {
         <div style={{height:'108px',background:'#e8e8e8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'36px',position:'relative'}}>
           🏍️
           {l.d && <div style={{position:'absolute',top:0,right:0,background:'#E8390E',color:'white',fontSize:'9px',fontWeight:800,padding:'4px 10px'}}>DESTACADA</div>}
-          {l.v && <div style={{position:'absolute',bottom:'6px',left:'6px',background:'#1D9E75',color:'white',fontSize:'9px',padding:'2px 7px',borderRadius:'2px'}}>VERIFICADO</div>}
         </div>
         <div style={{padding:'9px 11px'}}>
           <div style={{fontSize:'13px',fontWeight:700,color:'#1E2340',textTransform:'uppercase'}}>{l.n}</div>

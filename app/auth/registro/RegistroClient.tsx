@@ -6,7 +6,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
-export default function RegistroPage() {
+type AccountKind = 'user' | 'dealer'
+
+export default function RegistroPage({
+  dealersEnabled = false,
+  initialAs = 'user',
+}: {
+  dealersEnabled?: boolean
+  initialAs?: AccountKind
+}) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -16,6 +24,11 @@ export default function RegistroPage() {
   const [ciudad, setCiudad] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [accountKind, setAccountKind] = useState<AccountKind>(
+    dealersEnabled ? initialAs : 'user'
+  )
+
+  const callbackUrl = accountKind === 'dealer' ? '/dealers/registro' : '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +52,7 @@ export default function RegistroPage() {
       setError(data.error || 'Error al registrarse')
       setLoading(false)
     } else {
-      await signIn('credentials', {email, password, callbackUrl:'/'})
+      await signIn('credentials', {email, password, callbackUrl})
     }
   }
 
@@ -54,8 +67,15 @@ export default function RegistroPage() {
         </div>
 
         <button onClick={() => {
-            document.cookie = `mp_intent=signup; Max-Age=300; Path=/; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`
-            signIn('google', { callbackUrl: '/' })
+            const sec = window.location.protocol === 'https:' ? '; Secure' : ''
+            document.cookie = `mp_intent=signup; Max-Age=300; Path=/; SameSite=Lax${sec}`
+            // Marca para que events.createUser no mande el welcome generico
+            // cuando el user esta registrandose como dealer (luego recibe el
+            // welcome de dealer al completar el wizard).
+            if (accountKind === 'dealer') {
+              document.cookie = `mp_intent_dealer=1; Max-Age=300; Path=/; SameSite=Lax${sec}`
+            }
+            signIn('google', { callbackUrl })
           }}
           style={{width:'100%',padding:'12px',border:'1px solid #e0e0e0',borderRadius:'4px',background:'#fff',fontSize:'14px',fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginBottom:'20px'}}>
           <svg width="18" height="18" viewBox="0 0 24 24">
@@ -72,6 +92,46 @@ export default function RegistroPage() {
           <span style={{fontSize:'12px',color:'#999'}}>o con email</span>
           <div style={{flex:1,height:'1px',background:'#e0e0e0'}}></div>
         </div>
+
+        {dealersEnabled && (
+          <div style={{marginBottom:'20px'}}>
+            <div style={{fontSize:'11px',fontWeight:700,color:'#888',textTransform:'uppercase',marginBottom:'10px',textAlign:'center'}}>
+              Tipo de cuenta
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
+              <AccountKindCard
+                kind="user"
+                selected={accountKind === 'user'}
+                onSelect={() => setAccountKind('user')}
+                emoji="🏍️"
+                title="Comprar/Vender"
+                subtitle="mi moto"
+              />
+              <AccountKindCard
+                kind="dealer"
+                selected={accountKind === 'dealer'}
+                onSelect={() => setAccountKind('dealer')}
+                emoji="🏪"
+                title="Soy"
+                subtitle="Concesionario"
+              />
+            </div>
+            {accountKind === 'dealer' && (
+              <div style={{
+                marginTop:'10px',
+                padding:'10px 12px',
+                background:'#EEF2FF',
+                border:'1px solid #C7D2FE',
+                borderRadius:'4px',
+                fontSize:'12px',
+                color:'#3730A3',
+                lineHeight:1.5,
+              }}>
+                Al crear la cuenta vas a continuar con el registro del concesionario (logo, RUC, documentación). 60 días de prueba gratuita.
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={{marginBottom:'14px'}}>
@@ -135,5 +195,77 @@ export default function RegistroPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+function AccountKindCard({
+  kind, selected, onSelect, emoji, title, subtitle,
+}: {
+  kind: AccountKind
+  selected: boolean
+  onSelect: () => void
+  emoji: string
+  title: string
+  subtitle: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      role="radio"
+      aria-checked={selected}
+      aria-label={`${title} ${subtitle}`}
+      style={{
+        background: selected ? '#FFF3EE' : '#fff',
+        border: selected ? '2px solid #E8390E' : '2px solid #e0e0e0',
+        borderRadius: '6px',
+        padding: '14px 12px',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '4px',
+        position: 'relative',
+        transition: 'border-color 0.15s, background 0.15s',
+        textAlign: 'center',
+      }}
+    >
+      <div style={{ fontSize: '24px', lineHeight: 1 }}>{emoji}</div>
+      <div style={{
+        fontSize: '12px',
+        fontWeight: 800,
+        color: selected ? '#E8390E' : '#1E2340',
+        textTransform: 'uppercase',
+        marginTop: '4px',
+      }}>{title}</div>
+      <div style={{
+        fontSize: '11px',
+        fontWeight: 600,
+        color: selected ? '#E8390E' : '#666',
+        textTransform: 'uppercase',
+      }}>{subtitle}</div>
+      <div style={{
+        position: 'absolute',
+        top: '8px',
+        right: '8px',
+        width: '16px',
+        height: '16px',
+        borderRadius: '50%',
+        border: selected ? '2px solid #E8390E' : '2px solid #ccc',
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }} aria-hidden="true">
+        {selected && (
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: '#E8390E',
+          }} />
+        )}
+      </div>
+    </button>
   )
 }
