@@ -43,7 +43,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/login')
-  }, [status, router])
+    // Los dealers no tienen perfil personal — su gestión vive en /mi-tienda/perfil.
+    if (status === 'authenticated' && (session?.user as any)?.role === 'dealer') {
+      router.replace('/mi-tienda/perfil')
+    }
+  }, [status, session, router])
 
   useEffect(() => {
     if (session?.user?.email && !loaded) {
