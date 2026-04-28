@@ -211,7 +211,7 @@ function MisMotosContent() {
           <Link href="/publicar" style={{background:'#E8390E',color:'white',padding:'10px 20px',borderRadius:'4px',fontSize:'13px',fontWeight:700,textDecoration:'none'}}>+ Nueva publicacion</Link>
         </div>
 
-        {freeUsage && freeUsage.usedCount > 0 && (
+        {freeUsage && (
           freeUsage.usedCount >= freeUsage.limit ? (
             <div style={{
               background:'#fff5f0',
@@ -227,7 +227,7 @@ function MisMotosContent() {
             }}>
               Has usado tus {freeUsage.limit} publicaciones gratuitas.
             </div>
-          ) : (
+          ) : freeUsage.usedCount > 0 ? (
             <div style={{
               background:'#fff',
               border:'1px solid #e0e0e0',
@@ -239,6 +239,20 @@ function MisMotosContent() {
               lineHeight:1.5,
             }}>
               Has publicado <strong style={{color:'#1E2340'}}>{freeUsage.usedCount} de {freeUsage.limit}</strong> motos gratuitas.
+            </div>
+          ) : (
+            <div style={{
+              background:'#f0fdf4',
+              border:'1px solid #bbf7d0',
+              borderLeft:'4px solid #16a34a',
+              borderRadius:'8px',
+              padding:'12px 16px',
+              marginBottom:'20px',
+              fontSize:'13px',
+              color:'#166534',
+              lineHeight:1.5,
+            }}>
+              Tienes <strong>{freeUsage.limit}</strong> publicaciones gratuitas disponibles.
             </div>
           )
         )}

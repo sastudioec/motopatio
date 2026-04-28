@@ -136,7 +136,7 @@ export default function MiTiendaTabsClient({
         </div>
 
         <div style={{ padding: '24px' }}>
-          {tab === 'resumen' && <ResumenTab dealer={dealer} verifications={verifications} />}
+          {tab === 'resumen' && <ResumenTab dealer={dealer} verifications={verifications} listings={listings} />}
           {tab === 'anuncios' && <AnunciosTab dealer={dealer} listings={listings} />}
           {tab === 'leads' && <LeadsTab leads={leads} />}
           {tab === 'suscripcion' && <Placeholder
@@ -489,7 +489,7 @@ const th: React.CSSProperties = { padding: '10px 12px', fontSize: '11px', fontWe
 const thClickable: React.CSSProperties = { ...th, cursor: 'pointer', userSelect: 'none' }
 const td: React.CSSProperties = { padding: '10px 12px', color: '#1E2340' }
 
-function ResumenTab({ dealer, verifications }: { dealer: DealerSummary; verifications: Verification[] }) {
+function ResumenTab({ dealer, verifications, listings }: { dealer: DealerSummary; verifications: Verification[]; listings: ListingSummary[] }) {
   const trialEnds = dealer.trialEndsAt ? new Date(dealer.trialEndsAt) : null
   const trialFmt = trialEnds
     ? new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(trialEnds)
@@ -497,8 +497,56 @@ function ResumenTab({ dealer, verifications }: { dealer: DealerSummary; verifica
   const pending = verifications.find((v) => v.status === 'pending')
   const rejected = verifications.find((v) => v.status === 'rejected')
 
+  const activeCount = listings.filter((l) => l.estado === 'activo').length
+  const TRIAL_LIMIT = 20
+  const limitReached = activeCount >= TRIAL_LIMIT
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+    <>
+      {limitReached ? (
+        <div style={{
+          background:'#fff5f0',
+          border:'2px solid #E8390E',
+          borderLeft:'6px solid #E8390E',
+          borderRadius:'8px',
+          padding:'14px 18px',
+          marginBottom:'16px',
+          fontSize:'14px',
+          color:'#1E2340',
+          fontWeight:700,
+          lineHeight:1.5,
+        }}>
+          Has alcanzado el máximo de {TRIAL_LIMIT} motos del programa de lanzamiento. Cuando vendas alguna podrás publicar otra.
+        </div>
+      ) : activeCount > 0 ? (
+        <div style={{
+          background:'#fff',
+          border:'1px solid #e0e0e0',
+          borderRadius:'8px',
+          padding:'10px 14px',
+          marginBottom:'16px',
+          fontSize:'13px',
+          color:'#52525b',
+          lineHeight:1.5,
+        }}>
+          <strong style={{color:'#1E2340'}}>{activeCount} de {TRIAL_LIMIT}</strong> motos activas en el programa de lanzamiento.
+        </div>
+      ) : (
+        <div style={{
+          background:'#f0fdf4',
+          border:'1px solid #bbf7d0',
+          borderLeft:'4px solid #16a34a',
+          borderRadius:'8px',
+          padding:'10px 14px',
+          marginBottom:'16px',
+          fontSize:'13px',
+          color:'#166534',
+          lineHeight:1.5,
+        }}>
+          Tienes <strong>{TRIAL_LIMIT}</strong> motos disponibles para publicar en el programa de lanzamiento.
+        </div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
       <Card title="Estado">
         <Row label="Aprobación" value={
           dealer.approvalStatus === 'approved' ? '✅ Aprobado'
@@ -542,6 +590,7 @@ function ResumenTab({ dealer, verifications }: { dealer: DealerSummary; verifica
         </Link>
       </Card>
     </div>
+    </>
   )
 }
 

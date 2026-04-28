@@ -548,9 +548,62 @@ function PublicarContent() {
     if (plansLoading) {
       return <div style={{textAlign:'center',padding:'40px',color:'#888'}}>Cargando planes...</div>
     }
+    const isDealer = (session?.user as any)?.role === 'dealer'
+    const freeQuotaBanner = !isDealer && (() => {
+      if (freeUsedCount >= freeLimit) {
+        return (
+          <div style={{
+            background:'#fff5f0',
+            border:'2px solid #E8390E',
+            borderLeft:'6px solid #E8390E',
+            borderRadius:'8px',
+            padding:'12px 16px',
+            marginBottom:'14px',
+            fontSize:'13px',
+            color:'#1E2340',
+            fontWeight:700,
+            lineHeight:1.5,
+          }}>
+            Has usado tus {freeLimit} publicaciones gratuitas. Pronto tendremos planes para que sigas publicando.
+          </div>
+        )
+      }
+      if (freeUsedCount > 0) {
+        return (
+          <div style={{
+            background:'#fff',
+            border:'1px solid #e0e0e0',
+            borderRadius:'8px',
+            padding:'10px 14px',
+            marginBottom:'14px',
+            fontSize:'13px',
+            color:'#52525b',
+            lineHeight:1.5,
+          }}>
+            Te quedan <strong style={{color:'#1E2340'}}>{freeLimit - freeUsedCount} de {freeLimit}</strong> publicaciones gratuitas.
+          </div>
+        )
+      }
+      return (
+        <div style={{
+          background:'#f0fdf4',
+          border:'1px solid #bbf7d0',
+          borderLeft:'4px solid #16a34a',
+          borderRadius:'8px',
+          padding:'10px 14px',
+          marginBottom:'14px',
+          fontSize:'13px',
+          color:'#166534',
+          lineHeight:1.5,
+        }}>
+          Tienes <strong>{freeLimit}</strong> publicaciones gratuitas para empezar.
+        </div>
+      )
+    })()
     return (
       <div style={{background:'#fff',borderRadius:'8px',padding:'28px',border:'1px solid #e8e8e8',marginBottom:'20px'}}>
         <div style={{fontSize:'14px',fontWeight:800,color:'#1E2340',textTransform:'uppercase',marginBottom:'8px'}}>Elige tu plan</div>
+        {freeQuotaBanner}
         {!paidPlansEnabled && (
           <div style={{background:'#fff7ed',border:'1px solid #fed7aa',color:'#c2410c',padding:'10px 14px',borderRadius:'6px',fontSize:'13px',marginBottom:'14px',lineHeight:1.5}}>
             📢 Planes Básico y Full disponibles próximamente. Por ahora puedes publicar gratis.
