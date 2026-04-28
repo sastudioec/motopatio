@@ -33,8 +33,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
 
   if (dealer.user.email) {
-    sendDealerRejectedEmail(dealer.user.email, { nombreComercial: dealer.nombreComercial })
-      .catch((e) => console.error('[dealer rejected email]', e))
+    sendDealerRejectedEmail(dealer.user.email, {
+      nombreComercial: dealer.nombreComercial,
+      rejectionNotes: notes,
+    }).catch((e) => console.error('[dealer rejected email]', e))
   }
 
   return NextResponse.json({ ok: true })

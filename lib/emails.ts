@@ -246,7 +246,7 @@ export async function sendDealerWelcomeEmail(
   }).format(info.trialEndsAt)
   const body =
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
-    '&#x1F3EA; Bienvenido a MotoPatio Dealers, ' + info.nombreComercial + '!</h2>' +
+    '&#x1F3EA; ¡Bienvenido a MotoPatío Dealers, ' + info.nombreComercial + '!</h2>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;text-align:center;margin:0 0 20px;">' +
     'Tu cuenta quedó creada. Estamos revisando tu documentación para aprobarla — mientras tanto, puedes ir armando tu marca.</p>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 12px;">' +
@@ -264,7 +264,7 @@ export async function sendDealerWelcomeEmail(
   return resend.emails.send({
     from: 'MotoPatio <noreply@motopatio.com>',
     to,
-    subject: 'Bienvenido a MotoPatio Dealers, ' + info.nombreComercial,
+    subject: '¡Bienvenido a MotoPatío Dealers, ' + info.nombreComercial + '!',
     html: wrap(body),
   })
 }
@@ -277,39 +277,51 @@ export async function sendDealerApprovedEmail(
   const motosBlock = count > 0
     ? '<div style="background:#f9f9fb;border-radius:8px;padding:16px 20px;margin:0 0 20px;">' +
       '<p style="margin:0;font-size:14px;color:#3f3f46;">&#10003; <strong>' + count + '</strong> ' +
-      (count === 1 ? 'moto que tenias cargada ya esta publica' : 'motos que tenias cargadas ya estan publicas') + ' en MotoPatio.</p>' +
+      (count === 1 ? 'moto que tenías cargada ya está pública' : 'motos que tenías cargadas ya están públicas') + ' en MotoPatío.</p>' +
       '</div>'
     : ''
   const body =
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
     '&#x2705; Tu concesionario fue aprobado</h2>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;text-align:center;margin:0 0 16px;">' +
-    '&iexcl;Felicitaciones, ' + info.nombreComercial + '! Tu cuenta esta aprobada y tu perfil publico ya esta activo.</p>' +
+    '¡Felicitaciones, ' + info.nombreComercial + '! Tu cuenta está aprobada y tu perfil público ya está activo.</p>' +
     motosBlock +
-    btn(BASE + '/dealers/' + info.slug, 'Ver mi perfil publico')
+    btn(BASE + '/mi-tienda', 'Ir a mi panel')
   return resend.emails.send({
     from: 'MotoPatio <noreply@motopatio.com>',
     to,
-    subject: 'Tu concesionario fue aprobado en MotoPatio',
+    subject: 'Tu concesionario fue aprobado en MotoPatío',
     html: wrap(body),
   })
 }
 
 export async function sendDealerRejectedEmail(
   to: string,
-  info: { nombreComercial: string }
+  info: { nombreComercial: string; rejectionNotes?: string | null }
 ) {
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+  const notes = info.rejectionNotes && info.rejectionNotes.trim() ? info.rejectionNotes.trim() : null
+  const motivoBlock = notes
+    ? '<div style="background:#fff5f0;border-left:4px solid #e8572a;border-radius:8px;padding:16px 20px;margin:0 0 20px;">' +
+      '<p style="margin:0 0 8px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">Motivo</p>' +
+      '<p style="margin:0;font-size:14px;color:#3f3f46;line-height:1.6;">' + escape(notes).replace(/\n/g, '<br>') + '</p>' +
+      '</div>'
+    : ''
   const body =
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
-    'Sobre tu solicitud en MotoPatio</h2>' +
+    'Sobre tu solicitud en MotoPatío</h2>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 16px;">' +
-    'Hola ' + info.nombreComercial + ', tu cuenta no pudo ser aprobada en este momento.</p>' +
+    'Hola ' + info.nombreComercial + ', lamentamos comunicarte que no pudimos aprobar tu solicitud de concesionario en MotoPatío en este momento.</p>' +
+    motivoBlock +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 16px;">' +
-    'Contactanos a <a href="mailto:info@motopatio.com" style="color:#e8572a;font-weight:700;">info@motopatio.com</a> para mas informacion sobre los pasos a seguir.</p>'
+    'Si crees que esto es un error o quieres corregir y volver a enviar tu solicitud, puedes responder a este correo o escribirnos a <a href="mailto:info@motopatio.com" style="color:#e8572a;font-weight:700;">info@motopatio.com</a>.</p>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:24px 0 0;">Saludos,<br><strong>Equipo MotoPatío</strong></p>'
   return resend.emails.send({
     from: 'MotoPatio <noreply@motopatio.com>',
     to,
-    subject: 'Sobre tu solicitud en MotoPatio',
+    replyTo: 'info@motopatio.com',
+    subject: 'Sobre tu solicitud en MotoPatío',
     html: wrap(body),
   })
 }
