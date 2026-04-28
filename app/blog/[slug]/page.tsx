@@ -521,8 +521,8 @@ export default async function BlogPostPage({
               lineHeight: 1.6,
             }}
           >
-            Encontrá motos publicadas por particulares y concesionarios en todo
-            Ecuador, o publicá la tuya gratis.
+            Encuentra motos publicadas por particulares y concesionarios en todo
+            Ecuador, o publica la tuya gratis.
           </p>
           <div
             style={{
