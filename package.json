@@ -23,6 +23,7 @@
     "react-dom": "^19.0.0",
     "react-phone-number-input": "^3.4.16",
     "reading-time": "^1.5.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.12.0",
     "stripe": "^17.7.0"
   },
