@@ -367,6 +367,36 @@ export async function sendDealerApplicationAdminNotification(data: {
   })
 }
 
+export async function sendDealerApplicationConfirmation(data: {
+  email: string
+  contactName: string
+  businessName: string
+}) {
+  const nombre = (data.contactName || '').split(' ')[0] || 'hola'
+  const ctaUrl = BASE + '/auth/registro?as=dealer&email=' + encodeURIComponent(data.email)
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
+    '&#x1F389; ¡Recibimos tu solicitud, ' + nombre + '!</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;text-align:center;margin:0 0 20px;">' +
+    'Gracias por tu interés en ser parte del programa de concesionarios de Moto Patio. ' +
+    'Gabriela del equipo te va a contactar en menos de 48 horas para conocer tu negocio.</p>' +
+    '<div style="background:#fff5f0;border-left:4px solid #e8572a;border-radius:8px;padding:16px 20px;margin:0 0 20px;">' +
+    '<p style="margin:0 0 8px;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;">¿Quieres adelantar?</p>' +
+    '<p style="margin:0;font-size:14px;color:#3f3f46;line-height:1.6;">Crea tu cuenta gratis ahora con el botón de abajo y completa el registro de tu concesionario. ' +
+    'Cuando Gabriela te llame, ya tendrás todo listo.</p>' +
+    '</div>' +
+    btn(ctaUrl, 'Crear mi cuenta de concesionario') +
+    '<p style="font-size:13px;color:#a1a1aa;line-height:1.6;margin:24px 0 0;text-align:center;">' +
+    'Si prefieres esperar a que te contactemos, no hagas nada — te escribimos pronto.</p>'
+  return resend.emails.send({
+    from: 'MotoPatío <noreply@motopatio.com>',
+    to: data.email,
+    replyTo: 'info@motopatio.com',
+    subject: 'Recibimos tu solicitud — Programa de concesionarios MotoPatío',
+    html: wrap(body),
+  })
+}
+
 export async function sendDealerInvitationEmail(to: string) {
   const waNumber = process.env.GABRIELA_WHATSAPP || '+593 XXX XXX XXX'
   const waDigits = waNumber.replace(/[^\d]/g, '')

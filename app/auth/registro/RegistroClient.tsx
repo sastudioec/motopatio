@@ -11,13 +11,15 @@ type AccountKind = 'user' | 'dealer'
 export default function RegistroPage({
   dealersEnabled = false,
   initialAs = 'user',
+  initialEmail = '',
 }: {
   dealersEnabled?: boolean
   initialAs?: AccountKind
+  initialEmail?: string
 }) {
   const router = useRouter()
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [provincia, setProvincia] = useState('')

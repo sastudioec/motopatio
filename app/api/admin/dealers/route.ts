@@ -21,6 +21,16 @@ export async function GET(req: NextRequest) {
         take: 1,
         select: { documentType: true, documentUrl: true, status: true, notes: true },
       },
+      applications: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: {
+          businessName: true,
+          stockRange: true,
+          message: true,
+          createdAt: true,
+        },
+      },
       _count: { select: { listings: true } },
     },
   })

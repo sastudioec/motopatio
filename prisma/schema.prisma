@@ -281,6 +281,7 @@ model Dealer {
   subscriptions DealerSubscription[]
   leads         Lead[]
   verifications DealerVerification[]
+  applications  DealerApplication[]
 
   @@index([activo, ciudad])
   @@index([subscriptionStatus, subscriptionExpiresAt])
@@ -467,10 +468,19 @@ model DealerApplication {
   city         String
   stockRange   String
   message      String?  @db.Text
+  // "pending" — sin contactar / "contacted" — Gabriela ya escribió /
+  // "registered" — el solicitante creó cuenta y completó el wizard /
+  // "approved" / "rejected"
   status       String   @default("pending")
+  // Set cuando el solicitante crea su Dealer (linkeado por email lowercase
+  // en createDealer). Permite al admin ver de qué application viene cada
+  // dealer registrado.
+  dealerId     String?
+  dealer       Dealer?  @relation(fields: [dealerId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([status, createdAt])
   @@index([email])
+  @@index([dealerId])
 }

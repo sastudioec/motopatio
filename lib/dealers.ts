@@ -127,7 +127,7 @@ export async function createDealer(input: CreateDealerInput): Promise<Dealer> {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
       where: { id: input.userId },
-      select: { role: true, blocked: true },
+      select: { role: true, blocked: true, email: true },
     })
     if (!user) throw new Error('Usuario no encontrado')
     if (user.blocked) throw new Error('Usuario bloqueado')
@@ -178,6 +178,24 @@ export async function createDealer(input: CreateDealerInput): Promise<Dealer> {
       where: { id: input.userId },
       data: { role: 'dealer' },
     })
+
+    // Si el user llegó desde el formulario público de /dealers/programa,
+    // linkeamos la solicitud más reciente (por email lowercase) al dealer
+    // recién creado y la marcamos como "registered". Idempotente: si no
+    // hay match, no pasa nada.
+    if (user.email) {
+      const application = await tx.dealerApplication.findFirst({
+        where: { email: user.email.toLowerCase(), dealerId: null },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      })
+      if (application) {
+        await tx.dealerApplication.update({
+          where: { id: application.id },
+          data: { dealerId: dealer.id, status: 'registered' },
+        })
+      }
+    }
 
     return dealer
   })

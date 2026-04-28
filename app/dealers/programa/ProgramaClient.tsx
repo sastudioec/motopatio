@@ -412,8 +412,55 @@ export default function ProgramaClient() {
               >
                 ¡Recibimos tu solicitud!
               </h2>
-              <p style={{ fontSize: 15, color: '#52525b', lineHeight: 1.7, margin: 0 }}>
-                Gabriela del equipo de Moto Patio te contactará en breve para conocer tu negocio y activar tu cuenta.
+              <p style={{ fontSize: 15, color: '#52525b', lineHeight: 1.7, margin: '0 0 20px' }}>
+                Gabriela del equipo de Moto Patio te contactará en breve para conocer tu negocio.
+                También te enviamos un correo con los siguientes pasos.
+              </p>
+              <div
+                style={{
+                  background: '#fff5f0',
+                  border: '1px solid #FFD2BD',
+                  borderRadius: 12,
+                  padding: '20px',
+                  margin: '0 0 20px',
+                  textAlign: 'left',
+                }}
+              >
+                <p
+                  style={{
+                    margin: '0 0 6px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: '#E8390E',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  ¿No quieres esperar?
+                </p>
+                <p style={{ margin: '0 0 14px', fontSize: 14, color: '#3f3f46', lineHeight: 1.6 }}>
+                  Crea tu cuenta ahora y completa el registro de tu concesionario. Cuando Gabriela
+                  te llame, ya tendrás todo listo.
+                </p>
+                <a
+                  href={'/auth/registro?as=dealer&email=' + encodeURIComponent(email.trim())}
+                  style={{
+                    display: 'inline-block',
+                    background: '#E8390E',
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 800,
+                    textDecoration: 'none',
+                    padding: '12px 24px',
+                    borderRadius: 8,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Crear mi cuenta de concesionario
+                </a>
+              </div>
+              <p style={{ fontSize: 13, color: '#888', lineHeight: 1.6, margin: 0 }}>
                 Mientras tanto, prepara tu logo y un par de fotos buenas — te harán falta.
               </p>
             </div>

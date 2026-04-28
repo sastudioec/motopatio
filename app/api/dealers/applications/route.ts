@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendDealerApplicationAdminNotification } from '@/lib/emails'
+import {
+  sendDealerApplicationAdminNotification,
+  sendDealerApplicationConfirmation,
+} from '@/lib/emails'
 
 const STOCK_RANGES = ['1-10', '11-30', '31-50', '50+'] as const
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -51,17 +54,31 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Notificar al admin sin bloquear la respuesta del usuario.
-  sendDealerApplicationAdminNotification({
-    businessName: application.businessName,
-    contactName: application.contactName,
-    email: application.email,
-    phone: application.phone,
-    city: application.city,
-    stockRange: application.stockRange,
-    message: application.message,
-  }).catch((e) => {
-    console.error('[dealer-application] admin notification failed', application.id, e)
+  // Disparamos ambos correos en paralelo sin bloquear la respuesta. Usamos
+  // allSettled para que el fallo de uno no afecte al otro y registramos cada
+  // error de forma independiente.
+  Promise.allSettled([
+    sendDealerApplicationAdminNotification({
+      businessName: application.businessName,
+      contactName: application.contactName,
+      email: application.email,
+      phone: application.phone,
+      city: application.city,
+      stockRange: application.stockRange,
+      message: application.message,
+    }),
+    sendDealerApplicationConfirmation({
+      email: application.email,
+      contactName: application.contactName,
+      businessName: application.businessName,
+    }),
+  ]).then((results) => {
+    if (results[0].status === 'rejected') {
+      console.error('[dealer-application] admin notification failed', application.id, results[0].reason)
+    }
+    if (results[1].status === 'rejected') {
+      console.error('[dealer-application] applicant confirmation failed', application.id, results[1].reason)
+    }
   })
 
   return NextResponse.json({ ok: true, id: application.id })

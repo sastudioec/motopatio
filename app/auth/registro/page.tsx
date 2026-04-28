@@ -17,11 +17,20 @@ export const dynamic = 'force-dynamic'
 export default async function RegistroPage({
   searchParams,
 }: {
-  searchParams: Promise<{ as?: string }>
+  searchParams: Promise<{ as?: string; email?: string }>
 }) {
   const sp = await searchParams
   const enabled = dealersEnabled()
   const wantsDealer = enabled && sp.as === 'dealer'
+  // Email pre-rellenado desde el correo de confirmación de /dealers/programa.
+  // Validación ligera: si no parece email, lo descartamos en lugar de mostrar
+  // basura en el input.
+  const initialEmail = (() => {
+    const v = (sp.email || '').trim()
+    if (!v || v.length > 200) return ''
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return ''
+    return v
+  })()
 
   // Si ya hay sesion y querian registrarse como dealer, salteamos el form
   // y los mandamos directo al wizard (o al panel si ya son dealer).
@@ -41,5 +50,5 @@ export default async function RegistroPage({
   }
 
   const initialAs: 'user' | 'dealer' = wantsDealer ? 'dealer' : 'user'
-  return <RegistroClient dealersEnabled={enabled} initialAs={initialAs} />
+  return <RegistroClient dealersEnabled={enabled} initialAs={initialAs} initialEmail={initialEmail} />
 }

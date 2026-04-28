@@ -378,6 +378,21 @@ function AdminPageInner() {
                           <strong>Nota rechazo:</strong> {d.rejectionNotes}
                         </div>
                       )}
+                      {d.applications?.[0] && (
+                        <div style={{background:'#FFF5F0',border:'1px solid #FFD2BD',padding:'8px 10px',borderRadius:4,marginTop:8}}>
+                          <div style={{fontSize:11,fontWeight:800,color:'#E8390E',textTransform:'uppercase',letterSpacing:0.5,marginBottom:4}}>
+                            📋 Llegó desde el formulario público
+                          </div>
+                          <div style={{fontSize:12,color:'#444',lineHeight:1.6}}>
+                            <div><strong>Negocio:</strong> {d.applications[0].businessName}</div>
+                            <div><strong>Stock declarado:</strong> {d.applications[0].stockRange}</div>
+                            {d.applications[0].message && (
+                              <div><strong>Mensaje:</strong> {d.applications[0].message}</div>
+                            )}
+                            <div><strong>Fecha solicitud:</strong> {new Date(d.applications[0].createdAt).toLocaleDateString('es-EC')}</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     {d.approvalStatus === 'pending_approval' && (
                       <div style={{padding:'10px 14px',display:'flex',gap:8,borderTop:'1px solid #f0f0f0'}}>
