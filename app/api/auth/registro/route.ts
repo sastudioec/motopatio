@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
-import { sendVerificationEmail } from '@/lib/emails'
+import { sendVerificationEmail, notifyAdmin } from '@/lib/emails'
 import { getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
 export async function POST(request: Request) {
@@ -43,6 +43,22 @@ export async function POST(request: Request) {
       },
     })
     await sendVerificationEmail(email, name, verifyToken)
+
+    // Notificar al admin igual que el flow de Google OAuth (lib/auth.ts).
+    // Fire-and-forget: si falla el correo, no rompemos la creación del user.
+    try {
+      const nombre = name || 'usuario'
+      const adminBody = '<h3>Nuevo usuario</h3><ul>'
+        + '<li><strong>Nombre:</strong> ' + nombre + '</li>'
+        + '<li><strong>Email:</strong> ' + email + '</li>'
+        + '<li><strong>Provider:</strong> credentials (email/password)</li>'
+        + '<li><strong>Verificado:</strong> pendiente</li>'
+        + '</ul>'
+      await notifyAdmin('[MotoPatio][Usuario] Nuevo: ' + nombre + ' (' + email + ')', adminBody)
+    } catch (e) {
+      console.error('[notifyAdmin] usuario credentials:', e)
+    }
+
     return NextResponse.json({ message: 'Cuenta creada. Revisa tu correo para verificar.', userId: user.id })
   } catch (error) {
     console.error('Error registro:', error)
