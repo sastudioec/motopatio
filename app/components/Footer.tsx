@@ -29,6 +29,7 @@ export default function Footer() {
           <Link href="/motos" style={{display:'block',color:'#6b7280',textDecoration:'none',fontSize:'12px',marginBottom:'8px'}}>Ver motos</Link>
           <Link href="/publicar" style={{display:'block',color:'#6b7280',textDecoration:'none',fontSize:'12px',marginBottom:'8px'}}>Publicar moto</Link>
           <Link href="/precios" style={{display:'block',color:'#6b7280',textDecoration:'none',fontSize:'12px',marginBottom:'8px'}}>Planes y precios</Link>
+          <Link href="/blog" style={{display:'block',color:'#6b7280',textDecoration:'none',fontSize:'12px',marginBottom:'8px'}}>Blog</Link>
         </div>
 
         <div>

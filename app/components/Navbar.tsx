@@ -50,6 +50,7 @@ export default function Navbar() {
     { href: '/motos', label: 'Motos' },
     ...(dealersEnabled ? [{ href: '/dealers', label: 'Dealers' }] : []),
     { href: '/precios', label: 'Precios' },
+    { href: '/blog', label: 'Blog' },
   ]
 
   return (

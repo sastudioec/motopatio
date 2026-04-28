@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 import { ciudadSlugFromDb, tipoSlugFromDb, getTipoByDb } from '@/lib/category-slugs'
+import { getAllPosts } from '@/lib/blog'
 
 const BASE = (process.env.NEXTAUTH_URL || 'https://motopatio.com').replace(/\/$/, '')
 
@@ -15,12 +16,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/`,                          lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
     { url: `${BASE}/motos`,                     lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
     { url: `${BASE}/precios`,                   lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/blog`,                      lastModified: now, changeFrequency: 'weekly',  priority: 0.6 },
     { url: `${BASE}/ayuda`,                     lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/contacto`,                  lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/terminos`,                  lastModified: now, changeFrequency: 'yearly',  priority: 0.5 },
     { url: `${BASE}/politica-de-privacidad`,    lastModified: now, changeFrequency: 'yearly',  priority: 0.5 },
     { url: `${BASE}/politica-de-reembolsos`,    lastModified: now, changeFrequency: 'yearly',  priority: 0.5 },
   ]
+
+  let blogEntries: Entry[] = []
+  try {
+    const posts = await getAllPosts()
+    blogEntries = posts.map(p => ({
+      url: `${BASE}/blog/${p.slug}`,
+      lastModified: p.publishedAt ? new Date(p.publishedAt) : now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    }))
+  } catch (e) {
+    console.error('sitemap: error cargando posts:', e)
+  }
 
   let listingEntries: Entry[] = []
   let categoryEntries: Entry[] = []
@@ -143,5 +158,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: error cargando categorías:', e)
   }
 
-  return [...staticEntries, ...categoryEntries, ...listingEntries]
+  return [...staticEntries, ...blogEntries, ...categoryEntries, ...listingEntries]
 }
