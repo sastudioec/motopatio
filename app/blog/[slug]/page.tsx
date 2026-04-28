@@ -84,19 +84,35 @@ function isExternalUrl(href: string | undefined): boolean {
 }
 
 const mdxComponents = {
-  h2: (props: React.ComponentProps<'h2'>) => (
+  h2: ({ children, ...rest }: React.ComponentProps<'h2'>) => (
     <h2
       style={{
         fontFamily: 'Poppins,sans-serif',
         fontSize: '26px',
         fontWeight: 800,
         color: '#1E2340',
-        marginTop: '40px',
-        marginBottom: '14px',
-        lineHeight: 1.25,
+        marginTop: '56px',
+        marginBottom: '16px',
+        paddingTop: '22px',
+        position: 'relative',
+        lineHeight: 1.3,
       }}
-      {...props}
-    />
+      {...rest}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '56px',
+          height: '4px',
+          background: '#E8390E',
+          borderRadius: '2px',
+        }}
+      />
+      {children}
+    </h2>
   ),
   h3: (props: React.ComponentProps<'h3'>) => (
     <h3
