@@ -312,13 +312,13 @@ export default async function MotosPage({ searchParams }: { searchParams: Promis
             ) : (
               <>
                 {page === 1 && destacadas.length > 0 && (
-                  <>
-                    <DestacadasBlock listings={destacadas} diaSeleccionado={filtros.picoyplaca} />
-                    <div style={midBannerRowStyle}>
-                      <Banner position="motos_mid_left" aspectRatio="4/1" />
-                      <Banner position="motos_mid_right" aspectRatio="4/1" />
-                    </div>
-                  </>
+                  <DestacadasBlock listings={destacadas} diaSeleccionado={filtros.picoyplaca} />
+                )}
+                {page === 1 && (
+                  <div style={midBannerRowStyle}>
+                    <Banner position="motos_mid_left" aspectRatio="4/1" />
+                    <Banner position="motos_mid_right" aspectRatio="4/1" />
+                  </div>
                 )}
 
                 <div style={sectionHeaderStyle}>
