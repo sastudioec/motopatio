@@ -335,11 +335,31 @@ function MisMotosContent() {
                                 {disabled ? '...' : 'Reactivar'}
                               </button>
                             )}
-                            {planTipo !== 'gratis' && (
+                            {planTipo === 'basico' && (
+                              paidPlansEnabled ? (
+                                <>
+                                  <button onClick={() => setModalMoto(moto)}
+                                    style={{background:'#FFF3E0',color:'#B45309',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
+                                    🚀 Subir a Full
+                                  </button>
+                                  <button onClick={() => setModalMoto(moto)}
+                                    style={{background:'#EEF2FF',color:'#4338CA',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
+                                    ⭐ Destacar
+                                  </button>
+                                </>
+                              ) : (
+                                <button disabled
+                                  title="Pagos en mantenimiento. Disponible próximamente."
+                                  style={{background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'not-allowed',opacity:0.7}}>
+                                  🚀 Próximamente
+                                </button>
+                              )
+                            )}
+                            {planTipo === 'full' && (
                               paidPlansEnabled ? (
                                 <button onClick={() => setModalMoto(moto)}
                                   style={{background:'#EEF2FF',color:'#4338CA',border:'none',padding:'6px 12px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer'}}>
-                                  ⭐ Promocionar
+                                  ⭐ Destacar
                                 </button>
                               ) : (
                                 <button disabled
@@ -473,6 +493,7 @@ function MisMotosContent() {
                       <div style={{
                         width:'100%',padding:'8px',borderRadius:'4px',fontSize:'12px',fontWeight:700,
                         textAlign:'center',textTransform:'uppercase',letterSpacing:'0.3px',
+                        boxSizing:'border-box',
                         background: selected ? '#E8390E' : 'transparent',
                         color: selected ? '#fff' : '#999',
                         border: selected ? 'none' : '1px solid #e0e0e0',
@@ -509,7 +530,6 @@ function MisMotosContent() {
               })()}
               {modalMoto.planTipo === 'basico' && (
                 <>
-                  {renderDestacarCard()}
                   <div style={{border:'2px solid #E8390E',borderRadius:'8px',padding:'16px',position:'relative'}}>
                     <div style={{position:'absolute',top:'-10px',left:'16px',background:'#E8390E',color:'white',fontSize:'10px',fontWeight:800,padding:'2px 10px',borderRadius:'10px'}}>MEJOR VALOR</div>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
@@ -524,6 +544,7 @@ function MisMotosContent() {
                       {mejorarOpened ? 'Paga abajo ↓' : mejorarLoading === 'full' ? 'Abriendo pasarela...' : 'Pagar $10'}
                     </button>
                   </div>
+                  {renderDestacarCard()}
                 </>
               )}
               {modalMoto.planTipo === 'full' && renderDestacarCard()}
