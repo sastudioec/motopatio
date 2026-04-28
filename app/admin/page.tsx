@@ -262,7 +262,8 @@ function AdminPageInner() {
                       {user.blocked && <span style={{background:'#FCEBEB',color:'#A32D2D',padding:'2px 8px',borderRadius:'10px',fontSize:'10px',fontWeight:700}}>Bloqueado</span>}
                     </div>
                   </div>
-                  <div style={{display:'flex',gap:'8px'}}>
+                  <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+                    <Link href={`/admin/usuarios/${user.id}`} style={{background:'#EEF2FF',color:'#4338CA',border:'none',padding:'8px 14px',borderRadius:'4px',fontSize:'12px',fontWeight:600,cursor:'pointer',textDecoration:'none'}}>Ver detalle</Link>
                     {user.role !== 'admin' && (
                       <>
                         {user.blocked ? (
