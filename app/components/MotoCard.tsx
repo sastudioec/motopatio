@@ -164,9 +164,8 @@ export default function MotoCard({ l, diaSeleccionado }: { l: MotoLike; diaSelec
           <div style={{ fontSize: '18px', fontWeight: 800, color: '#E8390E' }}>
             ${l.precio?.toLocaleString()}
           </div>
-          <div style={{ fontSize: '10px', color: '#999', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span>{l.anio}</span>
-            <span>{l.km?.toLocaleString()} km</span>
+          <div style={{ fontSize: '10px', color: '#999' }}>
+            {l.anio} · {l.km?.toLocaleString()} km
           </div>
           {ubicacion && (
             <div style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>📍 {ubicacion}</div>
