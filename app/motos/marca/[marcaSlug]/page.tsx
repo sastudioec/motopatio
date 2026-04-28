@@ -27,16 +27,13 @@ export async function generateMetadata({ params }: { params: Promise<{ marcaSlug
   const { marcaSlug } = await params
   const data = await getData(marcaSlug)
   if (!data) return { title: 'Marca no encontrada' }
-  const { brand, listings, minPrecio } = data
+  const { brand, listings } = data
   const count = listings.length
   const url = `${BASE}/motos/marca/${marcaSlug}`
-  const priceSuffix = minPrecio ? ` Precios desde $${minPrecio.toLocaleString()}.` : ''
-  const title = `Motos ${brand.name} en venta en Ecuador`
-  const description = count > 0
-    ? `${count} motos ${brand.name} en venta en Ecuador.${priceSuffix} Compara precios, año y kilometraje. Publica tu ${brand.name} gratis en MotoPatío.`
-    : `Motos ${brand.name} en Ecuador en MotoPatío. Publica tu ${brand.name} gratis y llega a miles de compradores.`
+  const title = `Motos ${brand.name} en venta en Ecuador, usadas y nuevas`
+  const description = `Encuentra motos ${brand.name} en venta en Ecuador. ${brand.name} usadas, nuevas y de concesionario en Quito, Guayaquil y todo el país.`
   return {
-    title,
+    title: { absolute: `${title} | MotoPatío` },
     description,
     alternates: { canonical: url },
     robots: count > 0 ? { index: true, follow: true } : { index: false, follow: true },

@@ -9,12 +9,14 @@ import { publicListingFilter, publicListingDealerInclude } from '@/lib/listings-
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+const HOME_TITLE = 'Anuncios de motos en Ecuador, motos usadas y nuevas'
+const HOME_SOCIAL_TITLE = `${HOME_TITLE} | MotoPatío`
+const HOME_DESC =
+  'Compra y vende motos usadas y nuevas en Ecuador. Anuncios de Quito, Guayaquil, Cuenca y todo el país. Honda, Yamaha, Bajaj, Shineray y más.'
+
 export const metadata: Metadata = {
-  title: {
-    absolute: 'Motos usadas en Ecuador: compra, vende y publica | MotoPatío',
-  },
-  description:
-    'Motos usadas y de segunda mano en Ecuador. Shineray, Honda, Yamaha, Bajaj, Suzuki y más. Publica tu moto gratis en Quito, Guayaquil, Cuenca y todo el país.',
+  title: { absolute: HOME_SOCIAL_TITLE },
+  description: HOME_DESC,
   keywords: [
     'motos usadas Ecuador',
     'venta de motos Ecuador',
@@ -37,9 +39,8 @@ export const metadata: Metadata = {
     locale: 'es_EC',
     siteName: 'MotoPatío',
     url: 'https://motopatio.com/',
-    title: 'Motos usadas en Ecuador | MotoPatío',
-    description:
-      'Compra y vende motos usadas y nuevas en Ecuador. Shineray, Honda, Yamaha, Bajaj y más. Publica gratis en Quito, Guayaquil, Cuenca.',
+    title: HOME_SOCIAL_TITLE,
+    description: HOME_DESC,
     images: [
       {
         url: '/og-default.jpg',
@@ -51,9 +52,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Motos usadas en Ecuador | MotoPatío',
-    description:
-      'Compra, vende y publica motos en Ecuador. Shineray, Honda, Yamaha, Bajaj y más.',
+    title: HOME_SOCIAL_TITLE,
+    description: HOME_DESC,
     images: ['/og-default.jpg'],
   },
 }

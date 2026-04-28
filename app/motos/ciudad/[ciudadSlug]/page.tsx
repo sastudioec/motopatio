@@ -31,16 +31,13 @@ export async function generateMetadata({ params }: { params: Promise<{ ciudadSlu
   const { ciudadSlug } = await params
   const data = await getData(ciudadSlug)
   if (!data) return { title: 'Ciudad no encontrada' }
-  const { ciudad, listings, minPrecio } = data
+  const { ciudad, listings } = data
   const count = listings.length
   const url = `${BASE}/motos/ciudad/${ciudadSlug}`
-  const priceSuffix = minPrecio ? ` Precios desde $${minPrecio.toLocaleString()}.` : ''
   const title = `Motos en venta en ${ciudad.db}, Ecuador`
-  const description = count > 0
-    ? `${count} motos en venta en ${ciudad.db}.${priceSuffix} Compara precios, marcas y modelos. Publica tu moto gratis en MotoPatío.`
-    : `Motos en venta en ${ciudad.db} en MotoPatío. Publica tu moto gratis y llega a compradores en ${ciudad.db}.`
+  const description = `Motos en venta en ${ciudad.db}. Compra moto usada o nueva con anuncios de particulares y concesionarios locales en ${ciudad.db}.`
   return {
-    title,
+    title: { absolute: `${title} | MotoPatío` },
     description,
     alternates: { canonical: url },
     robots: count > 0 ? { index: true, follow: true } : { index: false, follow: true },

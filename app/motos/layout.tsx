@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 
 const BASE = (process.env.NEXTAUTH_URL || 'https://motopatio.com').replace(/\/$/, '')
 
-const TITLE = 'Motos en venta en Ecuador'
+const TITLE = 'Motos en venta en Ecuador: usadas, nuevas y concesionarios'
 const SOCIAL_TITLE = `${TITLE} | MotoPatío`
-const DESC = 'Compra y venta de motos usadas y nuevas en Ecuador. Encuentra motocicletas en Quito, Guayaquil, Cuenca y todo el país. Publica tu moto gratis en MotoPatío.'
+const DESC = 'Encuentra motos en venta en todo Ecuador. Filtra por marca, ciudad, precio y kilometraje. Anuncios de particulares y concesionarios verificados.'
 
 export const metadata: Metadata = {
   title: TITLE,

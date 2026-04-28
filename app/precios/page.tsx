@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import PreciosClient from './PreciosClient'
 
+const TITLE = 'Publica tu moto en Ecuador, planes y precios'
+const SOCIAL_TITLE = `${TITLE} | MotoPatío`
+const DESC =
+  'Publica tu moto en Ecuador y llega a miles de compradores. Plan gratis disponible. Pagos seguros con Payphone. Sin comisiones por venta.'
+
 export const metadata: Metadata = {
-  title: 'Planes y precios para publicar tu moto en Ecuador',
-  description:
-    'Planes para publicar tu moto en Ecuador: Gratis, Básico ($5, 15 días) y Full ($10, 30 días con destacado). Precios únicos, sin suscripciones.',
+  title: TITLE,
+  description: DESC,
   keywords: [
     'planes publicar moto',
     'precios publicación motos Ecuador',
@@ -19,15 +23,14 @@ export const metadata: Metadata = {
     locale: 'es_EC',
     siteName: 'MotoPatío',
     url: 'https://motopatio.com/precios',
-    title: 'Planes y precios | MotoPatío',
-    description:
-      'Planes para publicar tu moto en Ecuador: Gratis, Básico $5 y Full $10. Precios únicos, sin suscripciones.',
+    title: SOCIAL_TITLE,
+    description: DESC,
     images: [{ url: '/og-default.jpg', width: 1200, height: 630, alt: 'MotoPatío — Planes y precios' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Planes y precios | MotoPatío',
-    description: 'Publica tu moto en Ecuador. Planes Gratis, Básico $5 y Full $10.',
+    title: SOCIAL_TITLE,
+    description: DESC,
     images: ['/og-default.jpg'],
   },
 }
