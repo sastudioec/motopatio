@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { formatFechaLarga } from '@/lib/format-date'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const BASE = 'https://motopatio.com'
 
@@ -94,9 +95,7 @@ export async function sendDestacadoActivadoEmail(
   info: { titulo: string; slug: string; destacadoHasta: Date }
 ) {
   const n = (name || '').split(' ')[0] || 'hola'
-  const fecha = new Intl.DateTimeFormat('es-EC', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  }).format(info.destacadoHasta)
+  const fecha = formatFechaLarga(info.destacadoHasta)
   const body =
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">⭐ Tu moto está destacada</h2>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, tu anuncio aparece primero en el catálogo y en la sección "Clasificado Destacado" del home.</p>' +
@@ -128,12 +127,10 @@ export async function sendPlanMejoradoEmail(
   }
 ) {
   const n = (name || '').split(' ')[0] || 'hola'
-  const fechaExpira = new Intl.DateTimeFormat('es-EC', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  }).format(info.expiraEn)
+  const fechaExpira = formatFechaLarga(info.expiraEn)
   const featuredLine = info.featuredUntil
     ? '<p style="margin:6px 0 0;font-size:13px;color:#52525b;">⭐ Destacado hasta <strong>' +
-      new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(info.featuredUntil) +
+      formatFechaLarga(info.featuredUntil) +
       '</strong></p>'
     : ''
   const body =
@@ -170,9 +167,7 @@ export async function sendExpiracionAviso(opts: {
   listingId: string
 }) {
   const n = (opts.nombre || '').split(' ')[0] || 'hola'
-  const fecha = new Intl.DateTimeFormat('es-EC', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  }).format(opts.expiraEn)
+  const fecha = formatFechaLarga(opts.expiraEn)
   const body =
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">⏰ Tu moto expira pronto</h2>' +
     '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, tu publicación en MotoPatio expira en <strong>3 días</strong>. Renueva o vuelve a publicarla para que siga visible para los compradores.</p>' +
@@ -241,9 +236,7 @@ export async function sendDealerWelcomeEmail(
   to: string,
   info: { nombreComercial: string; slug: string; trialEndsAt: Date }
 ) {
-  const fecha = new Intl.DateTimeFormat('es-EC', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  }).format(info.trialEndsAt)
+  const fecha = formatFechaLarga(info.trialEndsAt)
   const body =
     '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;text-align:center;">' +
     '&#x1F3EA; ¡Bienvenido a MotoPatío Dealers, ' + info.nombreComercial + '!</h2>' +

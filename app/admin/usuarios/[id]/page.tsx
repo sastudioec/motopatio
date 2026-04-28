@@ -2,23 +2,11 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/admin-auth'
+import { formatFechaCorta as fmtFechaCorta, formatFechaHora as fmtFecha } from '@/lib/format-date'
 import UserActions from './UserActions'
 
 export const dynamic = 'force-dynamic'
 
-const fmtFecha = (d: Date | string | null | undefined) => {
-  if (!d) return '—'
-  return new Intl.DateTimeFormat('es-EC', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  }).format(new Date(d))
-}
-const fmtFechaCorta = (d: Date | string | null | undefined) => {
-  if (!d) return '—'
-  return new Intl.DateTimeFormat('es-EC', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  }).format(new Date(d))
-}
 const fmtMoneda = (cents: number) =>
   new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(cents / 100)
 
