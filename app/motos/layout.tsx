@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 
 const BASE = (process.env.NEXTAUTH_URL || 'https://motopatio.com').replace(/\/$/, '')
 
-const TITLE = 'Motos en venta en Ecuador | MotoPatío'
+const TITLE = 'Motos en venta en Ecuador'
+const SOCIAL_TITLE = `${TITLE} | MotoPatío`
 const DESC = 'Compra y venta de motos usadas y nuevas en Ecuador. Encuentra motocicletas en Quito, Guayaquil, Cuenca y todo el país. Publica tu moto gratis en MotoPatío.'
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
   description: DESC,
   alternates: { canonical: `${BASE}/motos` },
   openGraph: {
-    title: TITLE,
+    title: SOCIAL_TITLE,
     description: DESC,
     url: `${BASE}/motos`,
     siteName: 'MotoPatío',
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: TITLE,
+    title: SOCIAL_TITLE,
     description: DESC,
     images: [`${BASE}/motopatio-logo.png`],
   },
