@@ -7,6 +7,7 @@ import Image from 'next/image'
 import LeadsDateFilter from '@/app/components/LeadsDateFilter'
 import ListingHistorialModal from '@/app/components/ListingHistorialModal'
 import DealerActivityModal from '@/app/components/DealerActivityModal'
+import { formatFechaCorta } from '@/lib/format-date'
 
 type Tab = 'dashboard' | 'motos' | 'usuarios' | 'publicidad' | 'dealers' | 'leads'
 
@@ -352,7 +353,7 @@ function AdminPageInner() {
                       <div><strong>Razón social:</strong> {d.razonSocial || '—'}</div>
                       <div><strong>Email cuenta:</strong> {d.user?.email || '—'}</div>
                       <div><strong>Anuncios cargados:</strong> {d._count?.listings ?? 0}</div>
-                      <div><strong>Registrado:</strong> {new Date(d.createdAt).toLocaleDateString('es-EC')}</div>
+                      <div><strong>Registrado:</strong> {formatFechaCorta(d.createdAt)}</div>
                       {d.verifications?.[0]?.documentUrl && (
                         <div>
                           <strong>Documento:</strong>{' '}
@@ -390,7 +391,7 @@ function AdminPageInner() {
                             {d.applications[0].message && (
                               <div><strong>Mensaje:</strong> {d.applications[0].message}</div>
                             )}
-                            <div><strong>Fecha solicitud:</strong> {new Date(d.applications[0].createdAt).toLocaleDateString('es-EC')}</div>
+                            <div><strong>Fecha solicitud:</strong> {formatFechaCorta(d.applications[0].createdAt)}</div>
                           </div>
                         </div>
                       )}
@@ -594,7 +595,7 @@ function BannerList({ banners, onEdit, onDelete, onToggleActive }: any) {
               <div style={{flex:1}}>
                 <div style={{fontSize:'14px',fontWeight:700,color:'#1E2340'}}>{b.title}</div>
                 <div style={{fontSize:'11px',color:'#888'}}>
-                  {b.advertiser || 'Sin anunciante'} · {positionLabels[b.position] || b.position} · {start.toLocaleDateString()} → {end.toLocaleDateString()}
+                  {b.advertiser || 'Sin anunciante'} · {positionLabels[b.position] || b.position} · {formatFechaCorta(start)} → {formatFechaCorta(end)}
                 </div>
                 <div style={{display:'flex',gap:'6px',marginTop:'4px',alignItems:'center',flexWrap:'wrap'}}>
                   <span style={{background: vigente ? '#E1F5EE' : '#FCEBEB', color: vigente ? '#0F6E56' : '#A32D2D', padding:'2px 8px', borderRadius:'10px', fontSize:'10px', fontWeight:700}}>

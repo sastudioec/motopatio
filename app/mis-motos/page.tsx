@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { openCajita } from '@/lib/cajita'
+import { formatFechaLarga } from '@/lib/format-date'
 
 function MisMotosContent() {
   const { data: session, status } = useSession()
@@ -424,7 +425,7 @@ function MisMotosContent() {
           new Date(modalMoto.expiraEn).getTime() > ahora
         const puedeDestacar = listingVigente && !destacadoActivo
         const fechaDestacado = destacadoActivo
-          ? new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(modalMoto.destacadoHasta))
+          ? formatFechaLarga(modalMoto.destacadoHasta)
           : null
         const renderDestacarCard = () => (
           <div style={{border:'1px solid #e0e0e0',borderRadius:'8px',padding:'16px'}}>

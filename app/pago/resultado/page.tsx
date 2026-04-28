@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { formatFechaLarga } from '@/lib/format-date'
 
 function ResultadoContent() {
   const params = useSearchParams()
@@ -77,9 +78,7 @@ function ResultadoContent() {
   }
 
   if (status === 'ok') {
-    const fecha = destacadoHasta
-      ? new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(destacadoHasta))
-      : null
+    const fecha = destacadoHasta ? formatFechaLarga(destacadoHasta) : null
     const planLabel =
       planParam === 'full' ? 'Full' : planParam === 'basico' ? 'Básico' : null
     const okTitle = isFeatured

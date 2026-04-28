@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LeadsDateFilter from '@/app/components/LeadsDateFilter'
 import ListingHistorialModal from '@/app/components/ListingHistorialModal'
+import { formatFechaCortaHora, formatFechaLarga } from '@/lib/format-date'
 
 type DealerSummary = {
   slug: string
@@ -464,7 +465,7 @@ function LeadsTab({ leads }: { leads: LeadSummary[] }) {
           <tbody>
             {sortedLeads.map((l) => (
               <tr key={l.id} style={{ borderTop: '1px solid #ececec' }}>
-                <td style={td}>{new Intl.DateTimeFormat('es-EC', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(l.createdAt))}</td>
+                <td style={td}>{formatFechaCortaHora(l.createdAt)}</td>
                 <td style={{ ...td, fontWeight: 600 }}>{l.nombre}</td>
                 <td style={td}><a href={`tel:${l.telefono}`} style={{ color: '#E8390E' }}>{l.telefono}</a></td>
                 <td style={td}>{l.ciudad ?? '—'}</td>
@@ -490,10 +491,7 @@ const thClickable: React.CSSProperties = { ...th, cursor: 'pointer', userSelect:
 const td: React.CSSProperties = { padding: '10px 12px', color: '#1E2340' }
 
 function ResumenTab({ dealer, verifications, listings }: { dealer: DealerSummary; verifications: Verification[]; listings: ListingSummary[] }) {
-  const trialEnds = dealer.trialEndsAt ? new Date(dealer.trialEndsAt) : null
-  const trialFmt = trialEnds
-    ? new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'long', year: 'numeric' }).format(trialEnds)
-    : '—'
+  const trialFmt = dealer.trialEndsAt ? formatFechaLarga(dealer.trialEndsAt) : '—'
   const pending = verifications.find((v) => v.status === 'pending')
   const rejected = verifications.find((v) => v.status === 'rejected')
 

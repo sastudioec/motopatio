@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
+import { formatFechaLarga } from '@/lib/format-date'
 
 type Tab = 'personal' | 'seguridad' | 'pagos' | 'eliminar'
 
@@ -389,7 +390,7 @@ export default function ProfilePage() {
                           <div style={{fontSize:'14px',fontWeight:800,color:'#E8390E'}}>${p.precio?.toFixed(2) || '0.00'}</div>
                         </div>
                         <div style={{fontSize:'12px',color:'#888',display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:'8px'}}>
-                          <span>{new Date(p.createdAt).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</span>
+                          <span>{formatFechaLarga(p.createdAt)}</span>
                           <span style={{textTransform:'uppercase',fontWeight:700,color: p.estado==='pagado'?'#0F6E56': p.estado==='pendiente'?'#8B5A00':'#A32D2D'}}>{p.estado}</span>
                         </div>
                         {p.listings && p.listings.length > 0 && (

@@ -3,6 +3,7 @@ import { dealersEnabled } from '@/lib/dealer-flags'
 import { requireDealer } from '@/lib/dealer-auth'
 import { prisma } from '@/lib/prisma'
 import { dateRangeWhereCreatedAt } from '@/lib/date-range'
+import { formatFechaCortaHora } from '@/lib/format-date'
 
 function csvCell(v: any): string {
   if (v == null) return ''
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
 
   const header = ['Fecha', 'Nombre', 'Teléfono', 'Ciudad', 'Moto', 'Link', 'Financiamiento']
   const rows = leads.map((l) => [
-    new Intl.DateTimeFormat('es-EC', { dateStyle: 'short', timeStyle: 'short' }).format(l.createdAt),
+    formatFechaCortaHora(l.createdAt),
     l.nombre,
     l.telefono,
     l.ciudad ?? '',

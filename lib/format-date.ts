@@ -42,6 +42,17 @@ export function formatFechaHora(d: DateInput): string {
   }).format(date)
 }
 
+/** Ej: "28/4/26, 12:54" — formato compacto para tablas y CSV */
+export function formatFechaCortaHora(d: DateInput): string {
+  const date = toDate(d)
+  if (!date) return '—'
+  return new Intl.DateTimeFormat('es-EC', {
+    timeZone: TZ,
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date)
+}
+
 /** Ej: "28 de abril de 2026" — para cuerpos de email y mensajes formales */
 export function formatFechaLarga(d: DateInput): string {
   const date = toDate(d)
