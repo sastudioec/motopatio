@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
+import { isValidPhoneNumber } from 'libphonenumber-js'
 import { prisma } from '@/lib/prisma'
 import { getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 
@@ -51,6 +52,13 @@ export async function PUT(req: NextRequest) {
         { status: 400 }
       )
     }
+  }
+
+  if (typeof phone === 'string' && phone.trim() !== '' && !isValidPhoneNumber(phone)) {
+    return NextResponse.json(
+      { error: 'El número de celular no es válido' },
+      { status: 400 }
+    )
   }
 
   const data: any = {}

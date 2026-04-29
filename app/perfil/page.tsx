@@ -3,6 +3,8 @@ import { useSession, signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
 import { getProvincias, getCiudadesByProvincia } from '@/lib/provincias-ecuador'
 import { formatFechaLarga } from '@/lib/format-date'
 
@@ -94,6 +96,10 @@ export default function ProfilePage() {
   }
 
   const handleSavePersonal = async () => {
+    if (phone && !isValidPhoneNumber(phone)) {
+      showMsg('err', 'El número de celular no es válido. Revisa el código de país y el número.')
+      return
+    }
     setSaving(true)
     const res = await fetch('/api/user/profile', {
       method: 'PUT',
@@ -101,7 +107,10 @@ export default function ProfilePage() {
       body: JSON.stringify({ name, lastName, phone, ciudad, provincia, bio, gender, birthDate, avatar }),
     })
     if (res.ok) showMsg('ok', 'Perfil actualizado correctamente')
-    else showMsg('err', 'Error al guardar los cambios')
+    else {
+      const data = await res.json().catch(() => ({}))
+      showMsg('err', data.error || 'Error al guardar los cambios')
+    }
     setSaving(false)
   }
 
@@ -261,7 +270,19 @@ export default function ProfilePage() {
                   <label style={labelStyle}>
                     Celular {phoneVerified && <span style={{color:'#0F6E56',fontWeight:700,marginLeft:'6px'}}>✓ Verificado</span>}
                   </label>
-                  <input value={phone} onChange={e=>setPhone(e.target.value)} style={inputStyle} placeholder="+593 99 000 0000" />
+                  <PhoneInput
+                    international
+                    countryCallingCodeEditable={false}
+                    defaultCountry="EC"
+                    value={phone || undefined}
+                    onChange={(v) => setPhone(v || '')}
+                    className="mp-phone-input"
+                  />
+                  {phone && !isValidPhoneNumber(phone) && (
+                    <div style={{fontSize:'11px',color:'#A32D2D',marginTop:'4px',fontWeight:600}}>
+                      ✗ Número no válido. Revisa el código de país y el número.
+                    </div>
+                  )}
                 </div>
 
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'16px'}}>
