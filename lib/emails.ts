@@ -152,6 +152,25 @@ export async function sendPlanMejoradoEmail(
   })
 }
 
+export async function sendWelcomeReminderEmail(to: string, name: string) {
+  const n = (name || '').split(' ')[0] || 'hola'
+  const link = BASE + '/publicar'
+  const replyLink = 'mailto:info@motopatio.com?subject=' + encodeURIComponent('Necesito ayuda para publicar')
+  const body =
+    '<h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1f36;">¿Te ayudamos a publicar tu moto?</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Hola <strong>' + n + '</strong>, vimos que creaste tu cuenta en MotoPatío pero todavía no publicaste tu moto. ¿Necesitas ayuda con algo? Publicar es gratis y toma menos de 2 minutos.</p>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;">Si tienes alguna duda, responde a este correo y te ayudamos.</p>' +
+    btn(link, 'Publicar mi moto') +
+    '<div style="text-align:center;margin-top:12px;"><a href="' + replyLink + '" style="display:inline-block;color:#52525b;font-size:14px;text-decoration:underline;padding:8px 16px;">Responder por correo</a></div>'
+  return resend.emails.send({
+    from: 'MotoPatío <noreply@motopatio.com>',
+    to,
+    replyTo: 'info@motopatio.com',
+    subject: '¿Te ayudamos a publicar tu moto?',
+    html: wrap(body),
+  })
+}
+
 export async function sendMotoPublicadaEmail(to: string, name: string, moto: { titulo: string; slug: string; publicId: string; precio: number }) {
   const n = name.split(' ')[0]
   const precio = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(moto.precio)

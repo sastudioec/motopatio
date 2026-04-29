@@ -31,6 +31,7 @@ model User {
   passwordResetExpires  DateTime?
   blocked               Boolean        @default(false)
   lastFreePublicationAt DateTime?
+  welcomeReminderSentAt DateTime?
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   listings              Listing[]
