@@ -21,8 +21,8 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres')
       return
     }
     if (password !== confirm) {
@@ -89,7 +89,7 @@ function ResetPasswordForm() {
             <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Nueva contraseña</label>
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}
               style={{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'4px',fontSize:'14px',outline:'none'}}
-              placeholder="Mínimo 6 caracteres" />
+              placeholder="Mínimo 8 caracteres" />
           </div>
           <div style={{marginBottom:'16px'}}>
             <label style={{fontSize:'12px',fontWeight:600,color:'#333',display:'block',marginBottom:'6px'}}>Confirma la contraseña</label>

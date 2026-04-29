@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (!valid) return NextResponse.json({ error: 'Contraseña actual incorrecta' }, { status: 400 })
   const isSame = await bcrypt.compare(newPassword, user.password)
   if (isSame) return NextResponse.json({ error: 'La nueva contraseña no puede ser igual a la actual' }, { status: 400 })
-  const hashed = await bcrypt.hash(newPassword, 10)
+  const hashed = await bcrypt.hash(newPassword, 12)
   await prisma.user.update({ where: { id: user.id }, data: { password: hashed } })
   return NextResponse.json({ ok: true })
 }
