@@ -35,6 +35,7 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [requestingReset, setRequestingReset] = useState(false)
 
   const [payments, setPayments] = useState<any[]>([])
   const [loadingPayments, setLoadingPayments] = useState(false)
@@ -168,6 +169,19 @@ export default function ProfilePage() {
       showMsg('err', data.error || 'Error al cambiar contraseña')
     }
     setSaving(false)
+  }
+
+  const handleRequestPasswordReset = async () => {
+    if (requestingReset) return
+    setRequestingReset(true)
+    const res = await fetch('/api/user/request-password-reset', { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok) {
+      showMsg('ok', 'Te enviamos un enlace para restablecer tu contraseña a ' + email + '. Revisa tu correo (válido 15 minutos).')
+    } else {
+      showMsg('err', data.error || 'No pudimos enviar el enlace. Intenta de nuevo más tarde.')
+    }
+    setRequestingReset(false)
   }
 
   const handleDeleteAccount = async () => {
@@ -344,6 +358,15 @@ export default function ProfilePage() {
                       inputStyle={inputStyle}
                       labelStyle={labelStyle}
                     />
+                    <div style={{marginTop:'-8px',marginBottom:'16px'}}>
+                      <button
+                        type="button"
+                        onClick={handleRequestPasswordReset}
+                        disabled={requestingReset}
+                        style={{background:'none',border:'none',padding:0,color:'#1E2340',fontSize:'12px',fontWeight:600,cursor: requestingReset ? 'wait' : 'pointer',textDecoration:'underline'}}>
+                        {requestingReset ? 'Enviando…' : '¿Olvidaste tu contraseña actual?'}
+                      </button>
+                    </div>
                     <PasswordField
                       label="Nueva contraseña"
                       value={newPassword}

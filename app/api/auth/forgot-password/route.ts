@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import crypto from 'crypto'
-import { sendPasswordResetEmail } from '@/lib/emails'
+import { issuePasswordResetToken } from '@/lib/password-reset'
 
 const GENERIC_OK = { message: 'Si existe una cuenta con ese correo, te enviamos un enlace para restablecer tu contraseña.' }
 
@@ -13,17 +12,12 @@ export async function POST(request: Request) {
     }
     const user = await prisma.user.findUnique({ where: { email } })
     if (user && user.password) {
-      const token = crypto.randomBytes(32).toString('hex')
-      const expires = new Date(Date.now() + 60 * 60 * 1000)
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { passwordResetToken: token, passwordResetExpires: expires },
+      await issuePasswordResetToken({
+        userId: user.id,
+        email,
+        name: user.name,
+        ttlMinutes: 60,
       })
-      try {
-        await sendPasswordResetEmail(email, user.name || '', token)
-      } catch (e) {
-        console.error('Error enviando correo de reset:', e)
-      }
     }
     return NextResponse.json(GENERIC_OK)
   } catch (error) {
