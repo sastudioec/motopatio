@@ -94,6 +94,22 @@ export default function PreciosClient() {
                       {copy.badge}
                     </div>
                   )}
+                  {isFree && (
+                    <div
+                      style={{
+                        background: '#16a34a',
+                        color: 'white',
+                        textAlign: 'center',
+                        padding: '6px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                      }}
+                    >
+                      Promo temporal
+                    </div>
+                  )}
                   <div style={{ padding: '28px 24px' }}>
                     <div
                       style={{

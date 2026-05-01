@@ -633,6 +633,11 @@ function PublicarContent() {
                     {copy.badge}
                   </div>
                 )}
+                {isGratis && (
+                  <div style={{position:'absolute',top:'-10px',left:'16px',background:'#16a34a',color:'#fff',fontSize:'10px',fontWeight:800,padding:'4px 10px',borderRadius:'4px',textTransform:'uppercase',letterSpacing:'0.5px'}}>
+                    Promo temporal
+                  </div>
+                )}
                 <div style={{fontSize:'16px',fontWeight:900,color:'#1E2340',fontFamily:'Poppins,sans-serif',marginBottom:'4px'}}>
                   {plan.name}
                 </div>
