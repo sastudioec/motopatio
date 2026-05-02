@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { getPlanById, calcExpiresAt, calcFeaturedUntil } from '@/lib/plans'
 import { sendMotoPublicadaEmail, sendDestacadoActivadoEmail, sendPlanMejoradoEmail, notifyAdmin } from '@/lib/emails'
+import { maybeSendPhoneReminderOnPublish } from '@/lib/phone-reminder'
 import { buildListingSlug } from '@/lib/slug'
 import { generateListingPublicId } from '@/lib/public-id'
 
@@ -178,6 +179,11 @@ async function activatePlanPayment(
   } catch (e) {
     console.error('[activatePayment] email error:', e)
   }
+
+  await maybeSendPhoneReminderOnPublish(payment.userId, {
+    titulo: draft.marca + ' ' + draft.modelo,
+    slug: listing.slug || listing.id,
+  })
 
   try {
     const titulo = draft.marca + ' ' + draft.modelo

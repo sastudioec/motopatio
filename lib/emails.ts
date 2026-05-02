@@ -171,6 +171,76 @@ export async function sendWelcomeReminderEmail(to: string, name: string) {
   })
 }
 
+export async function sendPhonePendingReminderEmail(
+  to: string,
+  name: string,
+  moto: { titulo: string; slug: string }
+) {
+  const n = (name || '').split(' ')[0] || 'hola'
+  const motoUrl = BASE + '/motos/' + moto.slug
+  const body =
+    '<div style="text-align:center;margin:0 0 16px;">' +
+    '<span style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;">⚠️ Acción requerida</span>' +
+    '</div>' +
+    '<h2 style="margin:0 0 14px;font-size:24px;font-weight:800;color:#1a1f36;text-align:center;line-height:1.3;">' +
+    n + ', ¡no registraste tu teléfono!</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 18px;text-align:center;">' +
+    'Tu anuncio de la <strong>' + moto.titulo + '</strong> ya está publicado, pero <strong>nadie podrá contactarte</strong> hasta que agregues tu número.</p>' +
+    '<div style="background:#fff8e6;border-left:4px solid #e8572a;border-radius:6px;padding:16px 20px;margin:0 0 22px;">' +
+    '<p style="margin:0;font-size:14px;color:#1a1f36;line-height:1.6;">' +
+    'Sin teléfono no aparece el botón de WhatsApp ni el de llamada en tu publicación. Los compradores interesados ven la moto pero no tienen forma de escribirte.</p>' +
+    '</div>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 12px;">' +
+    '<strong>Soluciónalo ahora</strong> — toma menos de un minuto:</p>' +
+    '<div style="background:#f9f9fb;border-radius:8px;padding:20px;margin:0 0 16px;">' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">1. Entra a tu perfil en MotoPatio</p>' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#3f3f46;">2. Agrega tu número de teléfono (con código de país)</p>' +
+    '<p style="margin:0;font-size:14px;color:#3f3f46;">3. Guarda los cambios — ¡listo!</p>' +
+    '</div>' +
+    btn(BASE + '/perfil', 'Agregar mi teléfono ahora') +
+    '<p style="margin:24px 0 0;font-size:13px;color:#71717a;line-height:1.6;text-align:center;">' +
+    'Revisa tu publicación: <a href="' + motoUrl + '" style="color:#e8572a;text-decoration:none;">' + moto.titulo + '</a></p>'
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: '⚠️ ' + n + ', no registraste tu teléfono — los compradores no pueden contactarte',
+    html: wrap(body),
+  })
+}
+
+export async function sendPhonePendingFinalReminderEmail(
+  to: string,
+  name: string,
+  moto: { titulo: string; slug: string }
+) {
+  const n = (name || '').split(' ')[0] || 'hola'
+  const motoUrl = BASE + '/motos/' + moto.slug
+  const body =
+    '<div style="text-align:center;margin:0 0 16px;">' +
+    '<span style="display:inline-block;background:#dc2626;color:#fff;font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;">⛔ Último aviso</span>' +
+    '</div>' +
+    '<h2 style="margin:0 0 14px;font-size:24px;font-weight:800;color:#1a1f36;text-align:center;line-height:1.3;">' +
+    n + ', tu anuncio sigue sin teléfono</h2>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 18px;text-align:center;">' +
+    'Hace 2 días te avisamos que tu perfil no tiene número registrado. Tu <strong>' + moto.titulo + '</strong> está publicada, pero <strong>los compradores no pueden contactarte</strong>.</p>' +
+    '<div style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:6px;padding:16px 20px;margin:0 0 22px;">' +
+    '<p style="margin:0 0 8px;font-size:14px;color:#991b1b;font-weight:700;line-height:1.5;">Tu moto es invisible para los interesados.</p>' +
+    '<p style="margin:0;font-size:14px;color:#1a1f36;line-height:1.6;">' +
+    'Sin teléfono no aparece WhatsApp ni botón de llamada. La gente la ve, le interesa, y se va con otro vendedor que sí dejó cómo contactarse. Estás perdiendo ventas todos los días.</p>' +
+    '</div>' +
+    '<p style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 12px;">' +
+    'Este es el <strong>último recordatorio automático</strong>. Agregar tu número toma menos de un minuto:</p>' +
+    '<div style="text-align:center;margin-top:24px;"><a href="' + BASE + '/perfil" style="display:inline-block;background:#dc2626;color:#fff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:8px;">Agregar mi teléfono ahora</a></div>' +
+    '<p style="margin:24px 0 0;font-size:13px;color:#71717a;line-height:1.6;text-align:center;">' +
+    'Tu publicación: <a href="' + motoUrl + '" style="color:#e8572a;text-decoration:none;">' + moto.titulo + '</a></p>'
+  return resend.emails.send({
+    from: 'MotoPatio <noreply@motopatio.com>',
+    to,
+    subject: '⛔ ' + n + ', último aviso: tu anuncio sigue sin teléfono',
+    html: wrap(body),
+  })
+}
+
 export async function sendMotoPublicadaEmail(to: string, name: string, moto: { titulo: string; slug: string; publicId: string; precio: number }) {
   const n = name.split(' ')[0]
   const precio = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(moto.precio)

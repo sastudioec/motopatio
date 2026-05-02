@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendMotoPublicadaEmail, notifyAdmin } from '@/lib/emails'
+import { maybeSendPhoneReminderOnPublish } from '@/lib/phone-reminder'
 import {
   getPlanById,
   canPublishFreePlan,
@@ -200,6 +201,10 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error('Email error:', e)
     }
+    await maybeSendPhoneReminderOnPublish(user.id, {
+      titulo: body.marca + ' ' + body.modelo,
+      slug: (listing as any).slug || listing.id,
+    })
   } else {
     console.log('[listing creado] dealer pending — skipping moto publicada email (' + listing.id + ')')
   }
