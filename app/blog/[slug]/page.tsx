@@ -12,6 +12,7 @@ import {
 } from '@/lib/blog'
 import { formatFechaLarga } from '@/lib/format-date'
 import BlogCard from '../BlogCard'
+import { BrandHeader, ModelGrid } from '@/components/blog/BrandSection'
 
 const BASE = (process.env.NEXTAUTH_URL || 'https://motopatio.com').replace(
   /\/$/,
@@ -84,6 +85,8 @@ function isExternalUrl(href: string | undefined): boolean {
 }
 
 const mdxComponents = {
+  BrandHeader,
+  ModelGrid,
   h2: ({ children, ...rest }: React.ComponentProps<'h2'>) => (
     <h2
       style={{
