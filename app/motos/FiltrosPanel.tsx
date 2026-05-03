@@ -30,7 +30,7 @@ export const EMPTY_FILTROS: Filtros = {
   picoyplaca: '', soloElectricas: false, soloDealers: false, sort: 'recientes',
 }
 
-const TIPOS = ['Urbana', 'Naked', 'Trail/Enduro', 'Scooter', 'Deportiva', 'Crucero', 'Touring', 'Doble propósito']
+const TIPOS = ['Urbana', 'Naked', 'Trail/Enduro', 'Scooter', 'Deportiva', 'Crucero', 'Touring', 'Doble propósito', 'Clásica', 'Cuadrón']
 const CILINDRAJES = ['50cc', '100cc', '110cc', '125cc', '150cc', '160cc', '200cc', '250cc', '300cc', '400cc', '500cc', '600cc', '650cc', '700cc+']
 const DIAS = [
   { v: '1', label: 'Lunes' },

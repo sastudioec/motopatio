@@ -17,6 +17,8 @@ const TIPOS: Tipo[] = [
   { db: 'Crucero',         slug: 'cruceros',        singular: 'crucero',        plural: 'cruceros' },
   { db: 'Touring',         slug: 'touring',         singular: 'touring',        plural: 'touring' },
   { db: 'Doble propósito', slug: 'doble-proposito', singular: 'doble propósito', plural: 'doble propósito' },
+  { db: 'Clásica',         slug: 'clasicas',        singular: 'clásica',        plural: 'clásicas' },
+  { db: 'Cuadrón',         slug: 'cuadrones',       singular: 'cuadrón',        plural: 'cuadrones' },
 ]
 
 export function getTipoBySlug(slug: string): Tipo | null {

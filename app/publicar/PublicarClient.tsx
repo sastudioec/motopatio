@@ -253,7 +253,7 @@ function PublicarContent() {
       .catch(() => setModelsLoading(false))
   }, [form.marca, brands])
 
-  const tipos = ['Urbana','Naked','Trail/Enduro','Scooter','Deportiva','Crucero','Touring','Doble propósito']
+  const tipos = ['Urbana','Naked','Trail/Enduro','Scooter','Deportiva','Crucero','Touring','Doble propósito','Clásica','Cuadrón']
   const cilindradas = ['50cc','100cc','110cc','125cc','150cc','160cc','200cc','250cc','300cc','400cc','500cc','600cc','650cc','700cc+','Otro']
   const potenciasElectricas = ['Menos de 1 kW','1-3 kW','3-5 kW','5-10 kW','10-20 kW','Más de 20 kW','Otro']
   const colores = ['Amarillo','Azul','Bicolor','Blanco','Cafe','Dorado','Gris','Morado','Naranja','Negro','Plateado','Rojo','Rosa','Verde','Otro']
