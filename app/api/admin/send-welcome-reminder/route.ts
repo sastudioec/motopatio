@@ -8,21 +8,29 @@ import { sendWelcomeReminderEmail } from '@/lib/emails'
  *
  * Envia el recordatorio retroactivamente a usuarios viejos identificados
  * por email (los que se registraron antes de que existiera el cron y por
- * tanto cayeron fuera de la ventana 24-72h). Skipea silenciosamente a
- * quien ya recibio el correo (welcomeReminderSentAt != null) o ya tiene
- * algun Listing publicado (estado != 'borrador'). Marca welcomeReminderSentAt
- * tras enviar para que el cron horario no duplique.
+ * tanto cayeron fuera de la ventana 24-48h o 7d-8d). Skipea silenciosamente
+ * a quien ya recibio el correo del tipo correspondiente o ya tiene algun
+ * Listing publicado (estado != 'borrador'). Marca el flag tras enviar
+ * para que el cron diario no duplique.
  *
- * Body: { emails: string[] }
+ * Body: { emails: string[], type?: '24h' | '7d' }
+ *   - type default: '24h'  (controla cual flag se chequea/marca)
  * Response: { sent: string[], skipped: { email, reason }[], notFound: string[] }
  */
+type ReminderType = '24h' | '7d'
+
+const FLAG_BY_TYPE = {
+  '24h': 'welcomeReminderSentAt',
+  '7d': 'welcomeReminder7dSentAt',
+} as const satisfies Record<ReminderType, 'welcomeReminderSentAt' | 'welcomeReminder7dSentAt'>
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin()
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status })
   }
 
-  let body: { emails?: unknown }
+  let body: { emails?: unknown; type?: unknown }
   try {
     body = await req.json()
   } catch {
@@ -46,6 +54,16 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const type: ReminderType =
+    body.type === '7d' ? '7d' : body.type === '24h' || body.type === undefined ? '24h' : '24h'
+  if (body.type !== undefined && body.type !== '24h' && body.type !== '7d') {
+    return NextResponse.json(
+      { error: "type debe ser '24h' o '7d'" },
+      { status: 400 }
+    )
+  }
+  const flagField = FLAG_BY_TYPE[type]
+
   const sent: string[] = []
   const skipped: { email: string; reason: string }[] = []
   const notFound: string[] = []
@@ -58,6 +76,7 @@ export async function POST(req: NextRequest) {
         email: true,
         name: true,
         welcomeReminderSentAt: true,
+        welcomeReminder7dSentAt: true,
         listings: {
           where: { estado: { not: 'borrador' } },
           select: { id: true },
@@ -69,8 +88,10 @@ export async function POST(req: NextRequest) {
       notFound.push(email)
       continue
     }
-    if (user.welcomeReminderSentAt) {
-      skipped.push({ email, reason: 'ya recibio el recordatorio' })
+    const yaEnviado =
+      type === '24h' ? user.welcomeReminderSentAt : user.welcomeReminder7dSentAt
+    if (yaEnviado) {
+      skipped.push({ email, reason: 'ya recibio el recordatorio ' + type })
       continue
     }
     if (user.listings.length > 0) {
@@ -81,16 +102,16 @@ export async function POST(req: NextRequest) {
       await sendWelcomeReminderEmail(user.email, user.name || '')
       await prisma.user.update({
         where: { id: user.id },
-        data: { welcomeReminderSentAt: new Date() },
+        data: { [flagField]: new Date() },
       })
       sent.push(email)
-      console.log('[admin-welcome-reminder] enviado', user.id, email)
+      console.log('[admin-welcome-reminder ' + type + '] enviado', user.id, email)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       skipped.push({ email, reason: 'error envio: ' + msg })
-      console.error('[admin-welcome-reminder] error', email, msg)
+      console.error('[admin-welcome-reminder ' + type + '] error', email, msg)
     }
   }
 
-  return NextResponse.json({ sent, skipped, notFound })
+  return NextResponse.json({ sent, skipped, notFound, type })
 }

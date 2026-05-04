@@ -32,6 +32,7 @@ model User {
   blocked               Boolean        @default(false)
   lastFreePublicationAt DateTime?
   welcomeReminderSentAt DateTime?
+  welcomeReminder7dSentAt DateTime?
   phoneReminderSentAt   DateTime?
   phoneReminderFinalSentAt DateTime?
   createdAt             DateTime       @default(now())
