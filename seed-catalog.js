@@ -451,6 +451,14 @@ const CATALOG = [
     'CUx', 'TS', 'CPX',
     'Otro'
   ]},
+  { name: 'Z1', sortOrder: 80, models: [
+    'Tourism 250', 'Tourism Pro 250',
+    'AK 200',
+    'Super 150', 'Super 175',
+    'Cobra 250',
+    'CBR250 Storm',
+    'Otro'
+  ]},
   { name: 'Otra', sortOrder: 9999, models: [
     'Otra'
   ]},
